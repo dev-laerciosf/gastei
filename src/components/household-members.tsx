@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { inviteMember, removeMember } from "@/lib/actions/household";
 import { toast } from "sonner";
 
@@ -27,6 +28,8 @@ interface Household {
 export function HouseholdMembers({ household, currentUserId }: { household: Household; currentUserId: string }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [removingMember, setRemovingMember] = useState<{ id: string; name: string | null } | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   async function handleInvite(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -44,14 +47,17 @@ export function HouseholdMembers({ household, currentUserId }: { household: Hous
     setLoading(false);
   }
 
-  async function handleRemove(userId: string, name: string | null) {
-    if (!confirm(`Remover ${name ?? "este membro"} do household?`)) return;
-    const result = await removeMember(userId);
+  async function handleRemove() {
+    if (!removingMember) return;
+    setRemoving(true);
+    const result = await removeMember(removingMember.id);
     if (result.error) {
       toast.error(result.error);
     } else {
       toast.success("Membro removido");
     }
+    setRemoving(false);
+    setRemovingMember(null);
   }
 
   return (
@@ -75,7 +81,7 @@ export function HouseholdMembers({ household, currentUserId }: { household: Hous
                 </div>
               </div>
               {member.id !== currentUserId && (
-                <Button variant="ghost" size="icon" onClick={() => handleRemove(member.id, member.name)}>
+                <Button variant="ghost" size="icon" onClick={() => setRemovingMember({ id: member.id, name: member.name })}>
                   <UserMinus className="h-4 w-4" />
                 </Button>
               )}
@@ -105,6 +111,15 @@ export function HouseholdMembers({ household, currentUserId }: { household: Hous
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!removingMember}
+        onOpenChange={(open) => !open && setRemovingMember(null)}
+        title="Remover membro"
+        description={`Tem certeza que deseja remover ${removingMember?.name ?? "este membro"} do grupo?`}
+        onConfirm={handleRemove}
+        loading={removing}
+      />
     </div>
   );
 }

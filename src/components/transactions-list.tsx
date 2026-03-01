@@ -6,6 +6,7 @@ import { ptBR } from "date-fns/locale";
 import { Trash2, Pencil, Plus, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TransactionForm } from "@/components/transaction-form";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { deleteTransaction } from "@/lib/actions/transactions";
 import { formatCurrency } from "@/lib/utils/money";
 import { toast } from "sonner";
@@ -34,6 +35,8 @@ interface TransactionsListProps {
 export function TransactionsList({ transactions, categories }: TransactionsListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   function handleEdit(tx: Transaction) {
     setEditing(tx);
@@ -45,14 +48,17 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
     setFormOpen(true);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Tem certeza que deseja excluir esta transação?")) return;
-    const result = await deleteTransaction(id);
+  async function handleDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    const result = await deleteTransaction(deleteId);
     if (result.error) {
       toast.error(result.error);
     } else {
       toast.success("Transação excluída");
     }
+    setDeleting(false);
+    setDeleteId(null);
   }
 
   return (
@@ -94,7 +100,7 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
               <Button variant="ghost" size="icon" onClick={() => handleEdit(tx)}>
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => handleDelete(tx.id)}>
+              <Button variant="ghost" size="icon" onClick={() => setDeleteId(tx.id)}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -118,6 +124,15 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
               }
             : null
         }
+      />
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Excluir transação"
+        description="Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
       />
     </>
   );

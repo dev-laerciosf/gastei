@@ -5,6 +5,7 @@ import { Trash2, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CategoryForm } from "@/components/category-form";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { deleteCategory } from "@/lib/actions/categories";
 import { toast } from "sonner";
 
@@ -19,6 +20,8 @@ interface Category {
 export function CategoriesList({ categories }: { categories: Category[] }) {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const expenseCategories = categories.filter((c) => c.type === "EXPENSE");
   const incomeCategories = categories.filter((c) => c.type === "INCOME");
@@ -33,14 +36,17 @@ export function CategoriesList({ categories }: { categories: Category[] }) {
     setFormOpen(true);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Tem certeza que deseja excluir esta categoria?")) return;
-    const result = await deleteCategory(id);
+  async function handleDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    const result = await deleteCategory(deleteId);
     if (result.error) {
       toast.error(result.error);
     } else {
       toast.success("Categoria excluída");
     }
+    setDeleting(false);
+    setDeleteId(null);
   }
 
   function renderCategory(category: Category) {
@@ -54,7 +60,7 @@ export function CategoriesList({ categories }: { categories: Category[] }) {
           <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(category.id)}>
+          <Button variant="ghost" size="icon" onClick={() => setDeleteId(category.id)}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -85,6 +91,15 @@ export function CategoriesList({ categories }: { categories: Category[] }) {
       </div>
 
       <CategoryForm open={formOpen} onOpenChange={setFormOpen} category={editing} />
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Excluir categoria"
+        description="Tem certeza que deseja excluir esta categoria? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </>
   );
 }
