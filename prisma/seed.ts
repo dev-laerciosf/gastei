@@ -1,6 +1,12 @@
 import { PrismaClient, TransactionType } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
-const prisma = new PrismaClient();
+import "dotenv/config";
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 const DEFAULT_CATEGORIES = [
   { name: "Alimentacao", icon: "utensils", color: "#ef4444", type: TransactionType.EXPENSE },
