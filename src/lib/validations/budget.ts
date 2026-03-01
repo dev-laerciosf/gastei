@@ -1,12 +1,12 @@
 import { z } from "zod/v4";
 
 export const budgetSchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/, "Formato invalido (YYYY-MM)"),
+  month: z.string().regex(/^\d{4}-\d{2}$/, "Formato inválido (YYYY-MM)"),
   amount: z.string().refine((val) => {
     const num = parseFloat(val);
     return !isNaN(num) && num > 0;
   }, "Valor deve ser maior que zero"),
-  categoryId: z.string().min(1, "Categoria e obrigatoria"),
+  categoryId: z.string().min(1, "Categoria é obrigatória"),
 });
 
 export type BudgetInput = z.infer<typeof budgetSchema>;

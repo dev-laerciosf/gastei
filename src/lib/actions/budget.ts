@@ -52,7 +52,7 @@ export async function getBudgets(month?: string): Promise<BudgetWithSpent[]> {
 export async function upsertBudget(formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household não encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   const parsed = budgetSchema.safeParse({
@@ -89,7 +89,7 @@ export async function upsertBudget(formData: FormData) {
 export async function deleteBudget(id: string) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household não encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   await prisma.budget.delete({

@@ -18,7 +18,7 @@ export async function getCategories() {
 export async function createCategory(formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household nao encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   const parsed = categorySchema.safeParse({
@@ -46,7 +46,7 @@ export async function createCategory(formData: FormData) {
 export async function updateCategory(id: string, formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household nao encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   const parsed = categorySchema.safeParse({
@@ -72,7 +72,7 @@ export async function updateCategory(id: string, formData: FormData) {
 export async function deleteCategory(id: string) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household nao encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   const hasTransactions = await prisma.transaction.count({
@@ -80,7 +80,7 @@ export async function deleteCategory(id: string) {
   });
 
   if (hasTransactions > 0) {
-    return { error: "Categoria possui transacoes vinculadas" };
+    return { error: "Categoria possui transações vinculadas" };
   }
 
   await prisma.category.delete({

@@ -40,7 +40,7 @@ export function SettingsForm({ user }: { user: { name: string; email: string } }
           <div className="space-y-2">
             <Label>Email</Label>
             <Input value={user.email} disabled />
-            <p className="text-xs text-muted-foreground">Email nao pode ser alterado</p>
+            <p className="text-xs text-muted-foreground">Email não pode ser alterado</p>
           </div>
           <Button type="submit" disabled={loading}>
             {loading ? "Salvando..." : "Salvar"}

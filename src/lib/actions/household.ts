@@ -24,7 +24,7 @@ export async function getHousehold() {
 export async function inviteMember(formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household não encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   const parsed = inviteSchema.safeParse({ email: formData.get("email") });
@@ -41,7 +41,7 @@ export async function inviteMember(formData: FormData) {
   }
 
   if (user.householdId === session.user.householdId) {
-    return { error: "Usuário já faz parte deste household" };
+    return { error: "Usuário já faz parte deste grupo" };
   }
 
   await prisma.user.update({
@@ -56,7 +56,7 @@ export async function inviteMember(formData: FormData) {
 export async function removeMember(userId: string) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household não encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   if (userId === session.user.id) {

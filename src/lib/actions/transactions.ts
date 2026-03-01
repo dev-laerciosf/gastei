@@ -51,7 +51,7 @@ export async function getTransactions(params: GetTransactionsParams = {}) {
 export async function createTransaction(formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household não encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   const parsed = transactionSchema.safeParse({
@@ -86,7 +86,7 @@ export async function createTransaction(formData: FormData) {
 export async function updateTransaction(id: string, formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household não encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   const parsed = transactionSchema.safeParse({
@@ -120,7 +120,7 @@ export async function updateTransaction(id: string, formData: FormData) {
 export async function deleteTransaction(id: string) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household não encontrado" };
+    return { error: "Grupo não encontrado" };
   }
 
   await prisma.transaction.delete({

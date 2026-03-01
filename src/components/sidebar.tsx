@@ -12,7 +12,7 @@ export const navItems = [
   { href: "/transactions", label: "Transações", icon: ArrowLeftRight },
   { href: "/categories", label: "Categorias", icon: Tag },
   { href: "/budget", label: "Orçamento", icon: Target },
-  { href: "/household", label: "Household", icon: Users },
+  { href: "/household", label: "Membros", icon: Users },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
 
