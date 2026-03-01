@@ -1,5 +1,6 @@
 "use client";
 
+import { PieChart as PieChartIcon } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils/money";
@@ -21,7 +22,10 @@ export function CategoryChart({ data }: { data: CategoryData[] }) {
           <CardTitle>Despesas por Categoria</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="py-8 text-center text-muted-foreground">Sem despesas neste mês</p>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <PieChartIcon className="h-12 w-12 text-muted-foreground/50" />
+            <p className="mt-4 text-sm text-muted-foreground">Sem despesas neste mês</p>
+          </div>
         </CardContent>
       </Card>
     );

@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ArrowLeftRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils/money";
 
@@ -20,7 +22,13 @@ export function RecentTransactions({ transactions }: { transactions: Transaction
       </CardHeader>
       <CardContent>
         {transactions.length === 0 ? (
-          <p className="py-4 text-center text-muted-foreground">Nenhuma transação ainda</p>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <ArrowLeftRight className="h-12 w-12 text-muted-foreground/50" />
+            <p className="mt-4 text-sm text-muted-foreground">Nenhuma transação ainda</p>
+            <Link href="/transactions" className="mt-2 text-sm text-primary hover:underline">
+              Ver transações
+            </Link>
+          </div>
         ) : (
           <div className="space-y-3">
             {transactions.map((tx) => (

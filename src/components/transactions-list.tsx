@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Trash2, Pencil, Plus } from "lucide-react";
+import { Trash2, Pencil, Plus, ArrowLeftRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TransactionForm } from "@/components/transaction-form";
 import { deleteTransaction } from "@/lib/actions/transactions";
@@ -66,7 +66,14 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
 
       <div className="space-y-2">
         {transactions.length === 0 && (
-          <p className="py-8 text-center text-muted-foreground">Nenhuma transação encontrada</p>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <ArrowLeftRight className="h-12 w-12 text-muted-foreground/50" />
+            <p className="mt-4 text-sm text-muted-foreground">Nenhuma transação encontrada</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={handleNew}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Transação
+            </Button>
+          </div>
         )}
         {transactions.map((tx) => (
           <div key={tx.id} className="flex items-center justify-between rounded-md border p-4">

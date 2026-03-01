@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,7 +105,14 @@ export function BudgetList({ budgets, categories, currentMonth }: BudgetListProp
       </div>
 
       {budgets.length === 0 && (
-        <p className="py-8 text-center text-muted-foreground">Nenhum orçamento definido para este mês</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Target className="h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 text-sm text-muted-foreground">Nenhum orçamento definido para este mês</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => setFormOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Definir Orçamento
+          </Button>
+        </div>
       )}
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
