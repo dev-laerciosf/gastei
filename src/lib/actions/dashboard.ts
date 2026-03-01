@@ -18,8 +18,8 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
 
   const targetMonth = month ?? new Date().toISOString().slice(0, 7);
   const [year, mon] = targetMonth.split("-").map(Number);
-  const startDate = new Date(year, mon - 1, 1);
-  const endDate = new Date(year, mon, 1);
+  const startDate = new Date(Date.UTC(year, mon - 1, 1));
+  const endDate = new Date(Date.UTC(year, mon, 1));
 
   const transactions = await prisma.transaction.findMany({
     where: {

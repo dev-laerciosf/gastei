@@ -20,8 +20,8 @@ export async function getBudgets(month?: string): Promise<BudgetWithSpent[]> {
 
   const targetMonth = month ?? new Date().toISOString().slice(0, 7);
   const [year, mon] = targetMonth.split("-").map(Number);
-  const startDate = new Date(year, mon - 1, 1);
-  const endDate = new Date(year, mon, 1);
+  const startDate = new Date(Date.UTC(year, mon - 1, 1));
+  const endDate = new Date(Date.UTC(year, mon, 1));
 
   const budgets = await prisma.budget.findMany({
     where: { householdId: session.user.householdId, month: targetMonth },
@@ -52,7 +52,7 @@ export async function getBudgets(month?: string): Promise<BudgetWithSpent[]> {
 export async function upsertBudget(formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household nao encontrado" };
+    return { error: "Household não encontrado" };
   }
 
   const parsed = budgetSchema.safeParse({
@@ -89,7 +89,7 @@ export async function upsertBudget(formData: FormData) {
 export async function deleteBudget(id: string) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household nao encontrado" };
+    return { error: "Household não encontrado" };
   }
 
   await prisma.budget.delete({

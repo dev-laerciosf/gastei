@@ -24,8 +24,8 @@ export async function getTransactions(params: GetTransactionsParams = {}) {
   if (params.month) {
     const [year, month] = params.month.split("-").map(Number);
     where.date = {
-      gte: new Date(year, month - 1, 1),
-      lt: new Date(year, month, 1),
+      gte: new Date(Date.UTC(year, month - 1, 1)),
+      lt: new Date(Date.UTC(year, month, 1)),
     };
   }
 
@@ -51,7 +51,7 @@ export async function getTransactions(params: GetTransactionsParams = {}) {
 export async function createTransaction(formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household nao encontrado" };
+    return { error: "Household não encontrado" };
   }
 
   const parsed = transactionSchema.safeParse({
@@ -86,7 +86,7 @@ export async function createTransaction(formData: FormData) {
 export async function updateTransaction(id: string, formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household nao encontrado" };
+    return { error: "Household não encontrado" };
   }
 
   const parsed = transactionSchema.safeParse({
@@ -120,7 +120,7 @@ export async function updateTransaction(id: string, formData: FormData) {
 export async function deleteTransaction(id: string) {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { error: "Household nao encontrado" };
+    return { error: "Household não encontrado" };
   }
 
   await prisma.transaction.delete({
