@@ -42,13 +42,13 @@ export function CategoryChart({ data }: { data: CategoryData[] }) {
               cx="50%"
               cy="50%"
               outerRadius={100}
-              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+              label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
             >
               {expenses.map((entry, index) => (
                 <Cell key={index} fill={entry.color} />
               ))}
             </Pie>
-            <Tooltip formatter={(value: number) => formatCurrency(value)} />
+            <Tooltip formatter={(value) => formatCurrency(Number(value))} />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>

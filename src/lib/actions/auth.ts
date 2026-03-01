@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 import { registerSchema } from "@/lib/validations/auth";
 import { signIn } from "@/lib/auth";
-import { TransactionType } from "@/generated/prisma";
+import { TransactionType } from "@prisma/client";
 
 export async function register(formData: FormData) {
   const raw = {
