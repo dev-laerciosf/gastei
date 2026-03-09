@@ -9,7 +9,7 @@ function InsightBadge({ insight }: { insight: Insight }) {
 
   if (type === "new") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
         <Plus className="h-3 w-3" />
         Novo
       </span>
