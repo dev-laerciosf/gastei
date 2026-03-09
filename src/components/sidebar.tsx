@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowLeftRight, Tag, Target, Users, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, Tag, Target, Repeat, Users, Settings, LogOut, Sparkles } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/insights", label: "Insights", icon: Sparkles },
   { href: "/transactions", label: "Transações", icon: ArrowLeftRight },
   { href: "/categories", label: "Categorias", icon: Tag },
   { href: "/budget", label: "Orçamento", icon: Target },
+  { href: "/recurring", label: "Recorrências", icon: Repeat },
   { href: "/household", label: "Membros", icon: Users },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
@@ -31,7 +33,7 @@ export function Sidebar() {
             href={item.href}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              pathname === item.href
+              (item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href))
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
