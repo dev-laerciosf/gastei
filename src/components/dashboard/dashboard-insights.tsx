@@ -5,11 +5,11 @@ import { formatCurrency } from "@/lib/utils/money";
 import type { Insight } from "@/types";
 
 function InsightBadge({ insight }: { insight: Insight }) {
-  const { type, deltaMonth, transactionType } = insight;
+  const { type, deltaMonth } = insight;
 
   if (type === "new") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
         <Plus className="h-3 w-3" />
         Novo
       </span>
@@ -18,25 +18,25 @@ function InsightBadge({ insight }: { insight: Insight }) {
 
   if (type === "gone") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+      <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-900/30 dark:text-rose-400">
         <Ban className="h-3 w-3" />
         Zerou
       </span>
     );
   }
 
-  const isPositiveChange = transactionType === "INCOME" ? deltaMonth > 0 : deltaMonth < 0;
+  const isUp = deltaMonth > 0;
 
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-        isPositiveChange
+        isUp
           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
           : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
       }`}
     >
-      {deltaMonth > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-      {deltaMonth > 0 ? "+" : ""}{deltaMonth}%
+      {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+      {isUp ? "+" : ""}{deltaMonth}%
     </span>
   );
 }
