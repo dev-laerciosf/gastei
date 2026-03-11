@@ -12,7 +12,7 @@ import { TransactionPagination } from "@/components/transaction-pagination";
 import { deleteTransaction } from "@/lib/actions/transactions";
 import { useDeleteAction } from "@/hooks/use-delete-action";
 import { formatCurrency } from "@/lib/utils/money";
-import type { TransactionType } from "@/types";
+import type { TransactionType, Tag } from "@/types";
 
 interface Transaction {
   id: string;
@@ -23,18 +23,20 @@ interface Transaction {
   category: { id: string; name: string; color: string; type: TransactionType };
   user: { name: string | null };
   recurringOccurrence?: { id: string } | null;
+  tags: { tag: { id: string; name: string; color: string } }[];
 }
 
 interface TransactionsListProps {
   transactions: Transaction[];
   categories: Pick<import("@/types").Category, "id" | "name" | "type">[];
+  tags: Tag[];
   page: number;
   totalPages: number;
   totalIncome: number;
   totalExpense: number;
 }
 
-export function TransactionsList({ transactions, categories, page, totalPages, totalIncome, totalExpense }: TransactionsListProps) {
+export function TransactionsList({ transactions, categories, tags, page, totalPages, totalIncome, totalExpense }: TransactionsListProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const { deleteId, setDeleteId, deleting, handleDelete } = useDeleteAction(deleteTransaction);
@@ -92,6 +94,16 @@ export function TransactionsList({ transactions, categories, page, totalPages, t
                       Recorrente
                     </Badge>
                   )}
+                  {tx.tags.map(({ tag }) => (
+                    <Badge
+                      key={tag.id}
+                      variant="secondary"
+                      className="text-[10px] px-1.5 py-0"
+                      style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {tx.category.name} · {format(new Date(tx.date), "dd MMM yyyy", { locale: ptBR })}
@@ -118,6 +130,7 @@ export function TransactionsList({ transactions, categories, page, totalPages, t
         open={formOpen}
         onOpenChange={setFormOpen}
         categories={categories}
+        tags={tags}
         transaction={
           editing
             ? {
@@ -127,6 +140,7 @@ export function TransactionsList({ transactions, categories, page, totalPages, t
                 type: editing.type,
                 categoryId: editing.category.id,
                 date: new Date(editing.date).toISOString().split("T")[0],
+                tagIds: editing.tags.map((t) => t.tag.id),
               }
             : null
         }

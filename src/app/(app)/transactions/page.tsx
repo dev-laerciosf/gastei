@@ -1,9 +1,10 @@
 import { getTransactions } from "@/lib/actions/transactions";
 import { getCategories } from "@/lib/actions/categories";
+import { getTags } from "@/lib/actions/tags";
 import { TransactionsList } from "@/components/transactions-list";
 
 interface Props {
-  searchParams: Promise<{ month?: string; categoryId?: string; type?: string; search?: string; page?: string }>;
+  searchParams: Promise<{ month?: string; categoryId?: string; type?: string; search?: string; tagId?: string; page?: string }>;
 }
 
 export default async function TransactionsPage({ searchParams }: Props) {
@@ -17,15 +18,17 @@ export default async function TransactionsPage({ searchParams }: Props) {
     ? (params.type as "INCOME" | "EXPENSE")
     : undefined;
 
-  const [result, categories] = await Promise.all([
+  const [result, categories, tags] = await Promise.all([
     getTransactions({
       month: currentMonth,
       categoryId: params.categoryId,
       type,
       search: params.search,
+      tagId: params.tagId,
       page,
     }),
     getCategories(),
+    getTags(),
   ]);
 
   return (
@@ -34,6 +37,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
       <TransactionsList
         transactions={result.transactions}
         categories={categories}
+        tags={tags}
         page={result.page}
         totalPages={result.totalPages}
         totalIncome={result.totalIncome}

@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { createTransaction, updateTransaction } from "@/lib/actions/transactions";
 import { validateTransactionFormData } from "@/lib/validations/shared";
 import { toast } from "sonner";
-import type { TransactionType, Category } from "@/types";
+import { TagPicker } from "@/components/tag-picker";
+import type { TransactionType, Category, Tag } from "@/types";
 
 type TransactionFormCategory = Pick<Category, "id" | "name" | "type">;
 
@@ -21,27 +22,31 @@ interface TransactionData {
   type: TransactionType;
   categoryId: string;
   date: string;
+  tagIds?: string[];
 }
 
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categories: TransactionFormCategory[];
+  tags: Tag[];
   transaction?: TransactionData | null;
 }
 
-export function TransactionForm({ open, onOpenChange, categories, transaction }: TransactionFormProps) {
+export function TransactionForm({ open, onOpenChange, categories, tags, transaction }: TransactionFormProps) {
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState(transaction?.type ?? "EXPENSE");
   const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? "");
+  const [tagIds, setTagIds] = useState<string[]>(transaction?.tagIds ?? []);
   const isEditing = !!transaction;
 
   useEffect(() => {
     if (open) {
       setType(transaction?.type ?? "EXPENSE");
       setCategoryId(transaction?.categoryId ?? "");
+      setTagIds(transaction?.tagIds ?? []);
     }
-  }, [open, transaction?.type, transaction?.categoryId]);
+  }, [open, transaction?.type, transaction?.categoryId, transaction?.tagIds]);
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
@@ -59,6 +64,7 @@ export function TransactionForm({ open, onOpenChange, categories, transaction }:
 
     const formData = new FormData(e.currentTarget);
     formData.set("type", type);
+    formData.set("tagIds", JSON.stringify(tagIds));
 
     const validationError = validateTransactionFormData(formData);
     if (validationError) {
@@ -144,6 +150,7 @@ export function TransactionForm({ open, onOpenChange, categories, transaction }:
               required
             />
           </div>
+          <TagPicker tags={tags} selectedTagIds={tagIds} onChange={setTagIds} />
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Salvando..." : "Salvar"}
           </Button>
