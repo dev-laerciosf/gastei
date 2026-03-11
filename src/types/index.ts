@@ -17,6 +17,7 @@ export interface Transaction {
   categoryId: string;
   category: Pick<Category, "id" | "name" | "icon" | "color">;
   user: { name: string | null };
+  tags?: { tag: Tag }[];
 }
 
 export interface Budget {
@@ -56,6 +57,20 @@ export interface HouseholdInvite {
   invitee: { name: string | null; email: string };
   inviter: { name: string | null };
   household: { name: string };
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface TagSummary {
+  tagId: string;
+  tagName: string;
+  tagColor: string;
+  totalIncome: number;
+  totalExpense: number;
 }
 
 export interface Insight {
