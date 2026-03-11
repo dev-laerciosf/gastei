@@ -82,6 +82,7 @@ model Household {
   budgets               Budget[]
   invites               HouseholdInvite[]
   recurringTransactions RecurringTransaction[]
+  tags                  Tag[]
 
   @@map("households")
 }
@@ -154,6 +155,7 @@ model Transaction {
   household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   recurringOccurrence RecurringOccurrence?
+  tags                TransactionTag[]
 
   @@index([householdId, date])
   @@index([householdId, categoryId])
@@ -214,4 +216,31 @@ model RecurringOccurrence {
 
   @@unique([recurringTransactionId, month])
   @@map("recurring_occurrences")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#6b7280")
+  createdAt DateTime @default(now())
+
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  transactions TransactionTag[]
+
+  @@unique([name, householdId])
+  @@index([householdId])
+  @@map("tags")
+}
+
+model TransactionTag {
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  tagId String
+  tag   Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+  @@map("transaction_tags")
 }
