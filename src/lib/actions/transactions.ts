@@ -104,7 +104,8 @@ export async function getTransactions(params: GetTransactionsParams = {}): Promi
 
 export async function createTransaction(formData: FormData) {
   const session = await requireAuth();
-  if (!session.user.householdId) {
+  const householdId = session.user.householdId;
+  if (!householdId) {
     return { error: "Grupo não encontrado" };
   }
 
@@ -130,7 +131,7 @@ export async function createTransaction(formData: FormData) {
   }
 
   const category = await prisma.category.findFirst({
-    where: { id: parsed.data.categoryId, householdId: session.user.householdId },
+    where: { id: parsed.data.categoryId, householdId },
   });
   if (!category) {
     return { error: "Categoria não encontrada" };
@@ -138,7 +139,7 @@ export async function createTransaction(formData: FormData) {
 
   if (parsed.data.tagIds && parsed.data.tagIds.length > 0) {
     const validTags = await prisma.tag.count({
-      where: { id: { in: parsed.data.tagIds }, householdId: session.user.householdId },
+      where: { id: { in: parsed.data.tagIds }, householdId },
     });
     if (validTags !== parsed.data.tagIds.length) {
       return { error: "Tag não encontrada" };
@@ -155,7 +156,7 @@ export async function createTransaction(formData: FormData) {
           date: new Date(parsed.data.date + "T00:00:00Z"),
           categoryId: parsed.data.categoryId,
           userId: session.user.id,
-          householdId: session.user.householdId,
+          householdId,
         },
       });
 
@@ -180,7 +181,8 @@ export async function createTransaction(formData: FormData) {
 
 export async function updateTransaction(id: string, formData: FormData) {
   const session = await requireAuth();
-  if (!session.user.householdId) {
+  const householdId = session.user.householdId;
+  if (!householdId) {
     return { error: "Grupo não encontrado" };
   }
 
@@ -206,7 +208,7 @@ export async function updateTransaction(id: string, formData: FormData) {
   }
 
   const existing = await prisma.transaction.findFirst({
-    where: { id, householdId: session.user.householdId },
+    where: { id, householdId },
   });
 
   if (!existing) {
@@ -214,7 +216,7 @@ export async function updateTransaction(id: string, formData: FormData) {
   }
 
   const category = await prisma.category.findFirst({
-    where: { id: parsed.data.categoryId, householdId: session.user.householdId },
+    where: { id: parsed.data.categoryId, householdId },
   });
   if (!category) {
     return { error: "Categoria não encontrada" };
@@ -222,7 +224,7 @@ export async function updateTransaction(id: string, formData: FormData) {
 
   if (parsed.data.tagIds && parsed.data.tagIds.length > 0) {
     const validTags = await prisma.tag.count({
-      where: { id: { in: parsed.data.tagIds }, householdId: session.user.householdId },
+      where: { id: { in: parsed.data.tagIds }, householdId },
     });
     if (validTags !== parsed.data.tagIds.length) {
       return { error: "Tag não encontrada" };
