@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Trash2, Pencil, Plus, ArrowLeftRight, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionForm } from "@/components/transaction-form";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { TransactionPagination } from "@/components/transaction-pagination";
@@ -40,6 +42,8 @@ export function TransactionsList({ transactions, categories, tags, page, totalPa
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const { deleteId, setDeleteId, deleting, handleDelete } = useDeleteAction(deleteTransaction);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   function handleEdit(tx: Transaction) {
     setEditing(tx);
@@ -51,13 +55,47 @@ export function TransactionsList({ transactions, categories, tags, page, totalPa
     setFormOpen(true);
   }
 
+  function handleTagFilter(tagId: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tagId === "all") {
+      params.delete("tagId");
+    } else {
+      params.set("tagId", tagId);
+    }
+    params.delete("page");
+    router.push(`/transactions?${params.toString()}`);
+  }
+
   return (
     <>
       <div className="flex items-center justify-between">
-        <Button onClick={handleNew}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Transação
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleNew}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Transação
+          </Button>
+          {tags.length > 0 && (
+            <Select
+              value={searchParams.get("tagId") ?? "all"}
+              onValueChange={handleTagFilter}
+            >
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="Filtrar por tag" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as tags</SelectItem>
+                {tags.map((tag) => (
+                  <SelectItem key={tag.id} value={tag.id}>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                      {tag.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
       {(totalIncome > 0 || totalExpense > 0) && (
