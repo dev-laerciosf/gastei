@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { getMonthlySummary, getRecentTransactions } from "@/lib/actions/dashboard";
+import { getMonthlySummary, getRecentTransactions, getTagSummary } from "@/lib/actions/dashboard";
 import { getInsights } from "@/lib/actions/insights";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { DashboardInsights } from "@/components/dashboard/dashboard-insights";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { CategoryChart } from "@/components/dashboard/category-chart";
+import { TagSummary } from "@/components/dashboard/tag-summary";
 import { Button } from "@/components/ui/button";
 
 export default async function DashboardPage() {
-  const [summary, recentTransactions, insights] = await Promise.all([
+  const [summary, recentTransactions, insights, tagSummary] = await Promise.all([
     getMonthlySummary(),
     getRecentTransactions(),
     getInsights(),
+    getTagSummary(),
   ]);
 
   const isEmpty = summary.totalIncome === 0 && summary.totalExpense === 0 && recentTransactions.length === 0;
@@ -49,6 +51,7 @@ export default async function DashboardPage() {
             <CategoryChart data={summary.byCategory} />
             <RecentTransactions transactions={recentTransactions} />
           </div>
+          <TagSummary data={tagSummary} />
         </>
       )}
     </div>
