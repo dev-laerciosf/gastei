@@ -37,6 +37,7 @@ export interface RecurringTransaction {
   dayOfMonth: number;
   startMonth: string;
   endMonth: string | null;
+  installments: number | null;
   active: boolean;
   categoryId: string;
   category: Pick<Category, "id" | "name" | "type" | "color">;

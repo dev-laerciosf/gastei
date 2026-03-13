@@ -273,6 +273,7 @@ export async function deleteTransaction(id: string) {
 
   const existing = await prisma.transaction.findFirst({
     where: { id, householdId: session.user.householdId },
+    include: { recurringOccurrence: { select: { id: true } } },
   });
 
   if (!existing) {
@@ -280,8 +281,14 @@ export async function deleteTransaction(id: string) {
   }
 
   try {
-    await prisma.transaction.delete({
-      where: { id },
+    await prisma.$transaction(async (tx) => {
+      if (existing.recurringOccurrence) {
+        await tx.recurringOccurrence.update({
+          where: { id: existing.recurringOccurrence.id },
+          data: { paid: false, transactionId: null },
+        });
+      }
+      await tx.transaction.delete({ where: { id } });
     });
   } catch (error) {
     console.error("Failed to delete transaction:", error);
@@ -290,5 +297,6 @@ export async function deleteTransaction(id: string) {
 
   revalidatePath("/transactions");
   revalidatePath("/dashboard");
+  revalidatePath("/recurring");
   return { success: true };
 }

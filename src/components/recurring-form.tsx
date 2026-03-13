@@ -27,6 +27,7 @@ interface RecurringTransaction {
   dayOfMonth: number;
   startMonth: string;
   endMonth: string | null;
+  installments: number | null;
   category: { id: string; name: string; color: string; type: TransactionType };
 }
 
@@ -159,13 +160,17 @@ export function RecurringForm({ open, onOpenChange, categories, recurring }: Rec
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="endMonth">Mês final (opcional)</Label>
+            <Label htmlFor="installments">Parcelas (opcional)</Label>
             <Input
-              id="endMonth"
-              name="endMonth"
-              type="month"
-              defaultValue={recurring?.endMonth ?? ""}
+              id="installments"
+              name="installments"
+              type="number"
+              min={2}
+              max={48}
+              placeholder="Ex: 6"
+              defaultValue={recurring?.installments ?? ""}
             />
+            <p className="text-xs text-muted-foreground">Deixe vazio para pagamento fixo mensal</p>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Salvando..." : "Salvar"}

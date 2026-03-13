@@ -178,15 +178,16 @@ model Budget {
 }
 
 model RecurringTransaction {
-  id         String          @id @default(cuid())
-  description String
-  amount     Int
-  type       TransactionType
-  dayOfMonth Int
-  startMonth String
-  endMonth   String?
-  active     Boolean         @default(true)
-  createdAt  DateTime        @default(now())
+  id           String          @id @default(cuid())
+  description  String
+  amount       Int
+  type         TransactionType
+  dayOfMonth   Int
+  startMonth   String
+  endMonth     String?
+  installments Int?
+  active       Boolean         @default(true)
+  createdAt    DateTime        @default(now())
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
@@ -208,8 +209,8 @@ model RecurringOccurrence {
   month String
   paid  Boolean @default(false)
 
-  transactionId String      @unique
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId String?     @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
   recurringTransactionId String
   recurringTransaction   RecurringTransaction @relation(fields: [recurringTransactionId], references: [id], onDelete: Cascade)

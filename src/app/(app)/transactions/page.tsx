@@ -2,6 +2,7 @@ import { getTransactions } from "@/lib/actions/transactions";
 import { getCategories } from "@/lib/actions/categories";
 import { getTags } from "@/lib/actions/tags";
 import { TransactionsList } from "@/components/transactions-list";
+import { MonthPicker } from "@/components/month-picker";
 
 interface Props {
   searchParams: Promise<{ month?: string; categoryId?: string; type?: string; search?: string; tagId?: string; page?: string }>;
@@ -33,7 +34,10 @@ export default async function TransactionsPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-xl font-semibold">Transações</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Transações</h2>
+        <MonthPicker currentMonth={currentMonth} />
+      </div>
       <TransactionsList
         transactions={result.transactions}
         categories={categories}

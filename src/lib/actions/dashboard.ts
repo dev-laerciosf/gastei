@@ -72,14 +72,24 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
   };
 }
 
-export async function getRecentTransactions(limit = 5) {
+export async function getRecentTransactions(limit = 5, month?: string) {
   const session = await requireAuth();
   if (!session.user.householdId) return [];
 
   const safeLimit = Math.min(Math.max(1, limit), 50);
 
+  const where: Record<string, unknown> = { householdId: session.user.householdId };
+
+  if (month) {
+    const [year, mon] = month.split("-").map(Number);
+    where.date = {
+      gte: new Date(Date.UTC(year, mon - 1, 1)),
+      lt: new Date(Date.UTC(year, mon, 1)),
+    };
+  }
+
   return prisma.transaction.findMany({
-    where: { householdId: session.user.householdId },
+    where,
     include: { category: true, user: { select: { name: true } } },
     orderBy: { date: "desc" },
     take: safeLimit,

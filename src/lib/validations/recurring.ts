@@ -9,7 +9,7 @@ export const recurringSchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]),
   categoryId: z.string().min(1, "Categoria é obrigatória"),
   dayOfMonth: z.coerce.number().int().min(1, "Dia deve ser entre 1 e 28").max(28, "Dia deve ser entre 1 e 28"),
-  endMonth: z.string().regex(/^\d{4}-\d{2}$/, "Formato inválido (YYYY-MM)").optional().or(z.literal("")),
+  installments: z.coerce.number().int().min(2, "Mínimo 2 parcelas").max(48, "Máximo 48 parcelas").optional().or(z.literal("").transform(() => undefined)),
 });
 
 export type RecurringInput = z.infer<typeof recurringSchema>;

@@ -21,6 +21,7 @@ interface RecurringTransaction {
   dayOfMonth: number;
   startMonth: string;
   endMonth: string | null;
+  installments: number | null;
   category: { id: string; name: string; color: string; type: TransactionType };
 }
 
@@ -34,7 +35,7 @@ interface Occurrence {
     amount: number;
     type: TransactionType;
     date: string | Date;
-  };
+  } | null;
   recurringTransaction: {
     id: string;
     description: string;
@@ -158,14 +159,19 @@ export function RecurringList({ recurring, occurrences, categories }: RecurringL
                       <Badge variant="secondary">
                         {item.type === "INCOME" ? "Receita" : "Despesa"}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {templateOccurrences.length} {templateOccurrences.length === 1 ? "mês" : "meses"}
-                      </Badge>
+                      {item.installments ? (
+                        <Badge variant="outline" className="text-xs">
+                          {item.installments}x
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs text-emerald-600">
+                          Renova automaticamente
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {item.category.name} · Dia {item.dayOfMonth}
-                      {item.startMonth && ` · De ${formatMonth(item.startMonth)}`}
-                      {item.endMonth && ` até ${formatMonth(item.endMonth)}`}
+                      {item.startMonth && ` · Início ${formatMonth(item.startMonth)}`}
                     </p>
                   </div>
                 </div>
@@ -174,9 +180,9 @@ export function RecurringList({ recurring, occurrences, categories }: RecurringL
                     <span className={`font-semibold font-mono tabular-nums ${item.type === "INCOME" ? "text-emerald-600" : "text-rose-600"}`}>
                       {formatCurrency(item.amount)}
                     </span>
-                    {item.endMonth && templateOccurrences.length > 1 && (
+                    {item.installments && item.installments > 1 && (
                       <p className="text-xs text-muted-foreground font-mono tabular-nums">
-                        {formatCurrency(Math.round(item.amount / templateOccurrences.length))}/mês
+                        {formatCurrency(Math.round(item.amount / item.installments))}/mês
                       </p>
                     )}
                   </div>
@@ -205,12 +211,20 @@ export function RecurringList({ recurring, occurrences, categories }: RecurringL
                           <span className="text-sm font-medium w-20">
                             {formatMonth(occ.month)}
                           </span>
+                          {item.installments && (
+                            <span className="text-xs text-muted-foreground">
+                              Parcela {templateOccurrences.indexOf(occ) + 1}/{item.installments}
+                            </span>
+                          )}
                           <Badge variant="secondary" className={`text-xs ${config.className}`}>
                             {config.label}
                           </Badge>
                         </div>
-                        <span className={`text-sm font-mono tabular-nums ${occ.transaction.type === "INCOME" ? "text-emerald-600" : "text-rose-600"}`}>
-                          {formatCurrency(occ.transaction.amount)}
+                        <span className={`text-sm font-mono tabular-nums ${item.type === "INCOME" ? "text-emerald-600" : "text-rose-600"}`}>
+                          {formatCurrency(
+                            occ.transaction?.amount
+                              ?? (item.installments ? Math.round(item.amount / item.installments) : item.amount)
+                          )}
                         </span>
                       </div>
                     );

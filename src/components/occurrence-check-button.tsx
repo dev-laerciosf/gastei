@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useTransition } from "react";
 import { Check } from "lucide-react";
 import { toggleOccurrencePaid } from "@/lib/actions/recurring";
 import { toast } from "sonner";
 
 export function OccurrenceCheckButton({ occurrenceId, paid }: { occurrenceId: string; paid: boolean }) {
-  const [loading, setLoading] = useState(false);
+  const [loading, startTransition] = useTransition();
 
-  async function handleToggle() {
-    setLoading(true);
-    const result = await toggleOccurrencePaid(occurrenceId);
-    if (result.error) {
-      toast.error(result.error);
-    }
-    setLoading(false);
+  function handleToggle() {
+    startTransition(async () => {
+      const result = await toggleOccurrencePaid(occurrenceId);
+      if (result.error) {
+        toast.error(result.error);
+      }
+    });
   }
 
   return (

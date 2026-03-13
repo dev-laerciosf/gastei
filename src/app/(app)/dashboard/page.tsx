@@ -9,14 +9,23 @@ import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { CategoryChart } from "@/components/dashboard/category-chart";
 import { AnnualChart } from "@/components/dashboard/annual-chart";
 import { TagSummary } from "@/components/dashboard/tag-summary";
+import { MonthPicker } from "@/components/month-picker";
 import { Button } from "@/components/ui/button";
 
-export default async function DashboardPage() {
+interface Props {
+  searchParams: Promise<{ month?: string }>;
+}
+
+export default async function DashboardPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
+  const currentMonth = params.month && monthRegex.test(params.month) ? params.month : new Date().toISOString().slice(0, 7);
+
   const [summary, recentTransactions, insights, tagSummary, annualSummary] = await Promise.all([
-    getMonthlySummary(),
-    getRecentTransactions(),
-    getInsights(),
-    getTagSummary(),
+    getMonthlySummary(currentMonth),
+    getRecentTransactions(5, currentMonth),
+    getInsights(currentMonth),
+    getTagSummary(currentMonth),
     getAnnualSummary(),
   ]);
 
@@ -24,7 +33,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-xl font-semibold">Dashboard</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Dashboard</h2>
+        <MonthPicker currentMonth={currentMonth} />
+      </div>
 
       {isEmpty ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
