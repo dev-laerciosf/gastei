@@ -25,6 +25,9 @@ model User {
   sentInvites           HouseholdInvite[] @relation("InviteSender")
   receivedInvites       HouseholdInvite[] @relation("InviteReceiver")
   recurringTransactions RecurringTransaction[]
+  splitShares           SplitShare[]
+  settlementsFrom       Transaction[]     @relation("settlementFrom")
+  settlementsTo         Transaction[]     @relation("settlementTo")
 
   @@index([householdId])
   @@map("users")
@@ -76,6 +79,8 @@ model Household {
   createdAt DateTime @default(now())
   ownerId   String
 
+  defaultSplitRatio Json?
+
   members               User[]
   categories            Category[]
   transactions          Transaction[]
@@ -116,6 +121,7 @@ model HouseholdInvite {
 enum TransactionType {
   INCOME
   EXPENSE
+  SETTLEMENT
 }
 
 model Category {
@@ -145,8 +151,8 @@ model Transaction {
   date        DateTime
   createdAt   DateTime        @default(now())
 
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
   userId String
   user   User @relation(fields: [userId], references: [id])
@@ -156,9 +162,18 @@ model Transaction {
 
   recurringOccurrence RecurringOccurrence?
   tags                TransactionTag[]
+  split               Split?
+
+  settlementFromId String?
+  settlementFrom   User?   @relation("settlementFrom", fields: [settlementFromId], references: [id])
+
+  settlementToId String?
+  settlementTo   User?   @relation("settlementTo", fields: [settlementToId], references: [id])
 
   @@index([householdId, date])
   @@index([householdId, categoryId])
+  @@index([settlementFromId])
+  @@index([settlementToId])
   @@map("transactions")
 }
 
@@ -217,6 +232,33 @@ model RecurringOccurrence {
 
   @@unique([recurringTransactionId, month])
   @@map("recurring_occurrences")
+}
+
+model Split {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
+
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  shares        SplitShare[]
+
+  @@map("splits")
+}
+
+model SplitShare {
+  id      String @id @default(cuid())
+  amount  Int
+
+  splitId String
+  split   Split  @relation(fields: [splitId], references: [id], onDelete: Cascade)
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  @@unique([splitId, userId])
+  @@index([userId])
+  @@map("split_shares")
 }
 
 model Tag {
