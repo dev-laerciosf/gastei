@@ -1,4 +1,4 @@
-export type TransactionType = "INCOME" | "EXPENSE";
+export type TransactionType = "INCOME" | "EXPENSE" | "SETTLEMENT";
 
 export interface Category {
   id: string;
@@ -86,4 +86,35 @@ export interface Insight {
   deltaTrend: number;
   type: "increase" | "decrease" | "new" | "gone";
   transactionType: TransactionType;
+}
+
+export interface SplitShare {
+  userId: string;
+  userName: string | null;
+  amount: number;
+}
+
+export interface SplitBalance {
+  memberId: string;
+  memberName: string | null;
+  amount: number; // positive = you owe them, negative = they owe you
+}
+
+export interface SplitTransaction {
+  id: string;
+  description: string;
+  amount: number;
+  date: Date;
+  payer: { id: string; name: string | null };
+  category: { name: string; color: string };
+  shares: SplitShare[];
+}
+
+export interface Settlement {
+  id: string;
+  description: string;
+  amount: number;
+  date: Date;
+  from: { id: string; name: string | null };
+  to: { id: string; name: string | null };
 }
