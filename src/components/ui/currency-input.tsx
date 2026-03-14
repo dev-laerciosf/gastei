@@ -14,24 +14,31 @@ interface CurrencyInputProps
   extends Omit<React.ComponentProps<"input">, "value" | "onChange" | "type"> {
   name: string;
   defaultValueCents?: number;
+  onValueChange?: (cents: number) => void;
 }
 
-function CurrencyInput({ name, defaultValueCents = 0, className, ...props }: CurrencyInputProps) {
+function CurrencyInput({ name, defaultValueCents = 0, onValueChange, className, ...props }: CurrencyInputProps) {
   const [cents, setCents] = React.useState(defaultValueCents);
 
   React.useEffect(() => {
     setCents(defaultValueCents);
   }, [defaultValueCents]);
 
+  function updateCents(newCents: number) {
+    setCents(newCents);
+    onValueChange?.(newCents);
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const digits = e.target.value.replace(/\D/g, "");
-    setCents(Number(digits));
+    updateCents(Number(digits));
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Backspace") {
       e.preventDefault();
-      setCents((prev) => Math.floor(prev / 10));
+      const newCents = Math.floor(cents / 10);
+      updateCents(newCents);
     }
   }
 
