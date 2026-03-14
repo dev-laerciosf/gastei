@@ -34,7 +34,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             userEmail={session.user.email}
           />
           <Header pendingInviteCount={pendingInviteCount} userName={session.user.name} />
-          <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+          <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">
+            <div className="mx-auto max-w-5xl">{children}</div>
+          </main>
         </div>
       </div>
     </SessionProvider>
