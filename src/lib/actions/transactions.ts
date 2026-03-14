@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
 import { transactionSchema } from "@/lib/validations/transaction";
+import { splitSchema } from "@/lib/validations/split";
 import { parseCurrency } from "@/lib/utils/money";
 import type { Transaction, Category, TransactionType } from "@prisma/client";
 
@@ -127,6 +128,14 @@ export async function createTransaction(formData: FormData) {
     // ignore malformed tagIds — Zod will catch invalid values
   }
 
+  let shares: { userId: string; amount: number }[] | null = null;
+  try {
+    const rawShares = formData.get("shares");
+    if (rawShares) shares = JSON.parse(rawShares as string);
+  } catch {
+    // ignore malformed shares
+  }
+
   const parsed = transactionSchema.safeParse({
     description: formData.get("description"),
     amount: formData.get("amount"),
@@ -156,6 +165,17 @@ export async function createTransaction(formData: FormData) {
     }
   }
 
+  let validatedShares: { userId: string; amount: number }[] | null = null;
+  if (shares && shares.length >= 2 && parsed.data.type === "EXPENSE") {
+    const parsedShares = splitSchema.safeParse(shares);
+    if (parsedShares.success) {
+      const shareSum = parsedShares.data.reduce((sum, s) => sum + s.amount, 0);
+      if (shareSum === parseCurrency(parsed.data.amount)) {
+        validatedShares = parsedShares.data;
+      }
+    }
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.create({
@@ -176,6 +196,19 @@ export async function createTransaction(formData: FormData) {
             transactionId: transaction.id,
             tagId,
           })),
+        });
+      }
+
+      if (validatedShares) {
+        await tx.split.create({
+          data: {
+            transactionId: transaction.id,
+            shares: {
+              createMany: {
+                data: validatedShares.map((s) => ({ userId: s.userId, amount: s.amount })),
+              },
+            },
+          },
         });
       }
     });

@@ -1,6 +1,7 @@
 import { getTransactions } from "@/lib/actions/transactions";
 import { getCategories } from "@/lib/actions/categories";
 import { getTags } from "@/lib/actions/tags";
+import { getHousehold } from "@/lib/actions/household";
 import { TransactionsList } from "@/components/transactions-list";
 import { MonthPicker } from "@/components/month-picker";
 
@@ -19,7 +20,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
     ? (params.type as "INCOME" | "EXPENSE")
     : undefined;
 
-  const [result, categories, tags] = await Promise.all([
+  const [result, categories, tags, household] = await Promise.all([
     getTransactions({
       month: currentMonth,
       categoryId: params.categoryId,
@@ -30,7 +31,11 @@ export default async function TransactionsPage({ searchParams }: Props) {
     }),
     getCategories(),
     getTags(),
+    getHousehold(),
   ]);
+
+  const members = household?.members.map((m) => ({ id: m.id, name: m.name })) ?? [];
+  const defaultSplitRatio = (household?.defaultSplitRatio as Record<string, number> | null) ?? null;
 
   return (
     <div className="space-y-8">
@@ -46,6 +51,8 @@ export default async function TransactionsPage({ searchParams }: Props) {
         totalPages={result.totalPages}
         totalIncome={result.totalIncome}
         totalExpense={result.totalExpense}
+        members={members}
+        defaultSplitRatio={defaultSplitRatio}
       />
     </div>
   );
