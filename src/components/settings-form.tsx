@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { User, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +30,10 @@ export function SettingsForm({ user }: { user: { name: string; email: string } }
   return (
     <Card className="max-w-lg">
       <CardHeader>
-        <CardTitle>Perfil</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground" />
+          Perfil
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -38,8 +42,11 @@ export function SettingsForm({ user }: { user: { name: string; email: string } }
             <Input id="name" name="name" defaultValue={user.name} required />
           </div>
           <div className="space-y-2">
-            <Label>Email</Label>
-            <Input value={user.email} disabled />
+            <Label className="flex items-center gap-1.5">
+              Email
+              <Lock className="h-3 w-3 text-muted-foreground" />
+            </Label>
+            <Input value={user.email} disabled className="bg-muted/50" />
             <p className="text-xs text-muted-foreground">Email não pode ser alterado</p>
           </div>
           <Button type="submit" disabled={loading}>

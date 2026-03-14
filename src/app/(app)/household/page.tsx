@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import { getHousehold, getSentInvites, getPendingInvites } from "@/lib/actions/household";
 import { requireAuth } from "@/lib/auth-guard";
 import { HouseholdMembers } from "@/components/household-members";
@@ -14,11 +15,14 @@ export default async function HouseholdPage() {
 
   return (
     <div className="space-y-8">
+      <div className="flex items-center gap-2">
+        <Users className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-xl font-semibold">Grupo</h2>
+      </div>
+
       {pendingInvites.length > 0 && (
         <PendingInvites invites={pendingInvites} />
       )}
-
-      <h2 className="text-xl font-semibold">Membros</h2>
 
       {household ? (
         <HouseholdMembers
@@ -27,7 +31,15 @@ export default async function HouseholdPage() {
           sentInvites={sentInvites}
         />
       ) : (
-        <p className="text-muted-foreground">Nenhum grupo encontrado.</p>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <Users className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="mt-3 text-sm font-medium">Nenhum grupo encontrado</p>
+          <p className="mt-1 text-xs text-muted-foreground max-w-xs">
+            Crie um grupo para compartilhar despesas com outros membros
+          </p>
+        </div>
       )}
 
       {household && (

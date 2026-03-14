@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Pencil, Plus } from "lucide-react";
+import { Trash2, Pencil, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CategoryForm } from "@/components/category-form";
@@ -30,16 +30,16 @@ export function CategoriesList({ categories }: { categories: Category[] }) {
 
   function renderCategory(category: Category) {
     return (
-      <div key={category.id} className="flex items-center justify-between rounded-md border p-3">
+      <div key={category.id} className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent/50">
         <div className="flex items-center gap-3">
-          <div className="h-4 w-4 rounded-full" style={{ backgroundColor: category.color }} />
+          <div className="h-5 w-5 rounded-full shrink-0" style={{ backgroundColor: category.color }} />
           <span className="font-medium">{category.name}</span>
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(category)}>
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setDeleteId(category.id)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setDeleteId(category.id)}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -56,22 +56,50 @@ export function CategoriesList({ categories }: { categories: Category[] }) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">
-            Despesas <Badge variant="secondary">{expenseCategories.length}</Badge>
-          </h3>
-          {expenseCategories.length === 0 && (
-            <p className="text-sm text-muted-foreground py-4">Nenhuma categoria de despesa</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="h-4 w-4 text-rose-500" />
+              <h3 className="text-lg font-semibold">Despesas</h3>
+            </div>
+            <Badge variant="secondary" className="font-mono tabular-nums">
+              {expenseCategories.length}
+            </Badge>
+          </div>
+          {expenseCategories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-950">
+                <TrendingDown className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">Nenhuma categoria de despesa</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {expenseCategories.map(renderCategory)}
+            </div>
           )}
-          {expenseCategories.map(renderCategory)}
         </div>
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">
-            Receitas <Badge variant="secondary">{incomeCategories.length}</Badge>
-          </h3>
-          {incomeCategories.length === 0 && (
-            <p className="text-sm text-muted-foreground py-4">Nenhuma categoria de receita</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <h3 className="text-lg font-semibold">Receitas</h3>
+            </div>
+            <Badge variant="secondary" className="font-mono tabular-nums">
+              {incomeCategories.length}
+            </Badge>
+          </div>
+          {incomeCategories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950">
+                <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">Nenhuma categoria de receita</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {incomeCategories.map(renderCategory)}
+            </div>
           )}
-          {incomeCategories.map(renderCategory)}
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Sparkles, Plus, Ban } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/utils/money";
 import type { Insight } from "@/types";
@@ -9,7 +10,7 @@ function InsightBadge({ insight }: { insight: Insight }) {
 
   if (type === "new") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
         <Plus className="h-3 w-3" />
         Novo
       </span>
@@ -18,7 +19,7 @@ function InsightBadge({ insight }: { insight: Insight }) {
 
   if (type === "gone") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
         <Ban className="h-3 w-3" />
         Zerou
       </span>
@@ -29,10 +30,10 @@ function InsightBadge({ insight }: { insight: Insight }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
         isUp
-          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-          : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+          ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+          : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
       }`}
     >
       {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -65,9 +66,9 @@ function InsightCard({ insight }: { insight: Insight }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
+        <div className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50">
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
             style={{ backgroundColor: `${insight.categoryColor}20`, color: insight.categoryColor }}
           >
             <InsightIcon type={insight.type} />
@@ -106,10 +107,18 @@ export function DashboardInsights({ insights }: { insights: Insight[] }) {
           Insights
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
         {expenses.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Despesas</p>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-3.5 w-3.5 text-rose-500" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Despesas</p>
+              </div>
+              <Badge variant="secondary" className="font-mono tabular-nums text-xs">
+                {expenses.length}
+              </Badge>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {expenses.map((insight) => (
                 <InsightCard key={`${insight.categoryId}-${insight.transactionType}`} insight={insight} />
@@ -119,7 +128,15 @@ export function DashboardInsights({ insights }: { insights: Insight[] }) {
         )}
         {income.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Receitas</p>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Receitas</p>
+              </div>
+              <Badge variant="secondary" className="font-mono tabular-nums text-xs">
+                {income.length}
+              </Badge>
+            </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {income.map((insight) => (
                 <InsightCard key={`${insight.categoryId}-${insight.transactionType}`} insight={insight} />

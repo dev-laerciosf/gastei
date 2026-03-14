@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, Receipt } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils/money";
 import type { TransactionType } from "@/types";
@@ -19,23 +19,28 @@ export function RecentTransactions({ transactions }: { transactions: Transaction
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Transações Recentes</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Receipt className="h-4 w-4 text-muted-foreground" />
+          Transações Recentes
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {transactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <ArrowLeftRight className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-sm text-muted-foreground">Nenhuma transação ainda</p>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <ArrowLeftRight className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="mt-3 text-sm font-medium">Nenhuma transação ainda</p>
             <Link href="/transactions" className="mt-2 text-sm text-primary hover:underline">
               Ver transações
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {transactions.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between">
+              <div key={tx.id} className="flex items-center justify-between rounded-lg p-2.5 transition-colors hover:bg-accent/50">
                 <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: tx.category?.color ?? "#6b7280" }} />
+                  <div className="h-3.5 w-3.5 rounded-full shrink-0" style={{ backgroundColor: tx.category?.color ?? "#6b7280" }} />
                   <div>
                     <p className="text-sm font-medium">{tx.description}</p>
                     <p className="text-xs text-muted-foreground">
@@ -43,7 +48,7 @@ export function RecentTransactions({ transactions }: { transactions: Transaction
                     </p>
                   </div>
                 </div>
-                <span className={`text-sm font-semibold font-mono tabular-nums ${tx.type === "INCOME" ? "text-emerald-600" : "text-rose-600"}`}>
+                <span className={`text-sm font-semibold font-mono tabular-nums ${tx.type === "INCOME" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                   {tx.type === "INCOME" ? "+" : "-"} {formatCurrency(tx.amount)}
                 </span>
               </div>

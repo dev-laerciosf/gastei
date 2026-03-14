@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, LayoutDashboard } from "lucide-react";
 import { getMonthlySummary, getRecentTransactions, getTagSummary } from "@/lib/actions/dashboard";
 import { getInsights } from "@/lib/actions/insights";
 import { getAnnualSummary } from "@/lib/actions/annual";
@@ -37,7 +37,10 @@ export default async function DashboardPage({ searchParams }: Props) {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Dashboard</h2>
+        <div className="flex items-center gap-2">
+          <LayoutDashboard className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-xl font-semibold">Dashboard</h2>
+        </div>
         <MonthPicker currentMonth={currentMonth} />
       </div>
 
