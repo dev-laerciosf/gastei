@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
 import { safeMonth } from "@/lib/utils/date";
+import type { Prisma } from "@prisma/client";
 import type { TagSummary } from "@/types";
 
 export interface MonthlySummary {
@@ -79,7 +80,7 @@ export async function getRecentTransactions(limit = 5, month?: string) {
 
   const safeLimit = Math.min(Math.max(1, limit), 50);
 
-  const where: Record<string, unknown> = {
+  const where: Prisma.TransactionWhereInput = {
     householdId: session.user.householdId,
     type: { not: "SETTLEMENT" },
   };

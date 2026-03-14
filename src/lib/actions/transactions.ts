@@ -6,7 +6,7 @@ import { requireAuth } from "@/lib/auth-guard";
 import { transactionSchema } from "@/lib/validations/transaction";
 import { splitSchema } from "@/lib/validations/split";
 import { parseCurrency } from "@/lib/utils/money";
-import type { Transaction, Category, TransactionType } from "@prisma/client";
+import type { Transaction, Category, TransactionType, Prisma } from "@prisma/client";
 
 interface GetTransactionsParams {
   month?: string;
@@ -43,7 +43,7 @@ export async function getTransactions(params: GetTransactionsParams = {}): Promi
   const page = Math.min(10000, Math.max(1, params.page ?? 1));
   const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 50));
 
-  const where: Record<string, unknown> = {
+  const where: Prisma.TransactionWhereInput = {
     householdId: session.user.householdId,
   };
 
