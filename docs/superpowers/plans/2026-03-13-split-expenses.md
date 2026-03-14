@@ -688,9 +688,9 @@ where: {
 },
 ```
 
-- [ ] **Step 2: Filter SETTLEMENT in `transactions.ts`**
+- [ ] **Step 2: Filter SETTLEMENT in `transactions.ts` and fix nullable category type**
 
-In `getTransactions`, when no explicit type filter is set, exclude SETTLEMENT. After the existing type filter block (line 61-63):
+In `getTransactions`, when no explicit type filter is set, exclude SETTLEMENT. Replace the existing type filter block (line 61-63):
 
 ```typescript
 if (params.type) {
@@ -699,6 +699,21 @@ if (params.type) {
   where.type = { not: "SETTLEMENT" };
 }
 ```
+
+Update `TransactionWithRelations` type (line 20-25) to handle nullable category:
+
+```typescript
+type TransactionWithRelations = Transaction & {
+  category: Category | null;
+  user: { name: string | null };
+  recurringOccurrence: { id: string } | null;
+  tags: { tag: { id: string; name: string; color: string } }[];
+};
+```
+
+In `transactions-list.tsx`, update the category rendering to handle null:
+- `tx.category.color` → `tx.category?.color ?? "#6b7280"`
+- `tx.category.name` → `tx.category?.name ?? "Sem categoria"`
 
 - [ ] **Step 3: Filter SETTLEMENT in `insights.ts`**
 
@@ -752,8 +767,37 @@ await tx.transaction.update({
   },
 });
 
-// Delete split if amount changed (user must re-split)
-if (existing.split && newAmount !== existing.amount) {
+// Delete split if amount or type changed (user must re-split)
+if (existing.split && (newAmount !== existing.amount || parsed.data.type !== existing.type)) {
+  await tx.split.delete({ where: { id: existing.split.id } });
+}
+```
+
+**Note on inline shares for updateTransaction:** The spec says `updateTransaction` accepts optional `shares[]`. However, since amount changes delete the existing split, and the split section is available in the form, the user flow is:
+1. Edit transaction → if amount changes, split is auto-deleted
+2. User re-enables "Dividir despesa" toggle in the form to create a new split
+
+To support this, add the same share parsing and validation logic as `createTransaction` to `updateTransaction`. After the tag operations inside the DB transaction:
+
+```typescript
+// Handle inline shares (same pattern as createTransaction)
+if (validatedShares) {
+  // Delete existing split first if any
+  if (existing.split) {
+    await tx.split.delete({ where: { id: existing.split.id } });
+  }
+  await tx.split.create({
+    data: {
+      transactionId: id,
+      shares: {
+        createMany: {
+          data: validatedShares.map((s) => ({ userId: s.userId, amount: s.amount })),
+        },
+      },
+    },
+  });
+} else if (existing.split && (newAmount !== existing.amount || parsed.data.type !== existing.type)) {
+  // Only auto-delete if no new shares provided and amount/type changed
   await tx.split.delete({ where: { id: existing.split.id } });
 }
 ```
@@ -944,6 +988,8 @@ split: {
 
 Add `split` to the `Transaction` interface in `transactions-list.tsx`.
 
+**Note:** The spec lists `split-button.tsx` and `split-badge.tsx` as separate components. For simplicity, these are inlined into `transactions-list.tsx` since they're small UI elements tightly coupled to the list. If they grow complex during implementation, extract to separate files.
+
 For the split button: open a `Dialog` containing `SplitSection` + a submit button that calls `createSplit(tx.id, shares)` server action.
 
 For the split badge: show a `Scale` icon. On click, open a `Dialog` with `SplitSection` pre-filled with existing shares. Two actions:
@@ -1090,7 +1136,7 @@ export default async function SplitsPage({ searchParams }: Props) {
 
 **Balance summary (top):**
 - Card per member with balance: "Você deve R$X a Y" (rose) or "Y te deve R$X" (emerald)
-- "Acertar" button opens `SettlementDialog`
+- "Acertar" button opens `SettlementDialog` — **only shown for "you-owe" balances** (amount > 0). For "they-owe" balances (amount < 0), the other member must initiate the settlement from their view.
 - If all balances are zero: "Todas as contas estão acertadas"
 
 **Split transactions (middle):**
