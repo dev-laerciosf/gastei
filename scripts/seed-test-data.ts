@@ -185,7 +185,7 @@ async function seed() {
     { name: "Essencial", color: "#10b981" },
     { name: "Supérfluo", color: "#ef4444" },
   ];
-  const createdTags = [];
+  const createdTags: { id: string; name: string; color: string; householdId: string }[] = [];
   for (const tag of tags) {
     const t = await prisma.tag.create({ data: { ...tag, householdId } });
     createdTags.push(t);
