@@ -7,7 +7,7 @@ import "dotenv/config";
 // Re-declare DEFAULT_CATEGORIES here to avoid importing from src/
 // which would require tsconfig path aliases in the seed context.
 // This list must match src/lib/setup-household.ts DEFAULT_CATEGORIES.
-import { TransactionType } from "@prisma/client";
+import { TransactionType, GoalType } from "@prisma/client";
 
 const DEFAULT_CATEGORIES = [
   { name: "Alimentação", icon: "utensils", color: "#ef4444", type: TransactionType.EXPENSE },
@@ -52,6 +52,50 @@ async function main() {
 
   console.log(`Created household: ${household.id}`);
   console.log(`Created ${DEFAULT_CATEGORIES.length} default categories`);
+
+  const savingsGoal = await prisma.savingsGoal.create({
+    data: {
+      name: "Trip to Europe",
+      type: GoalType.SAVINGS,
+      targetAmount: 1500000,
+      currentAmount: 450000,
+      targetDate: new Date("2026-12-31"),
+      icon: "piggy-bank",
+      color: "#10b981",
+      householdId: household.id,
+      userId: user.id,
+    },
+  });
+
+  await prisma.goalEntry.createMany({
+    data: [
+      { amount: 200000, note: "First deposit", goalId: savingsGoal.id },
+      { amount: 150000, note: "Bonus", goalId: savingsGoal.id },
+      { amount: 100000, goalId: savingsGoal.id },
+    ],
+  });
+
+  const spendingGoal = await prisma.savingsGoal.create({
+    data: {
+      name: "Reduce delivery",
+      type: GoalType.SPENDING,
+      targetAmount: 30000,
+      currentAmount: 12000,
+      icon: "utensils",
+      color: "#f97316",
+      householdId: household.id,
+      userId: user.id,
+    },
+  });
+
+  await prisma.goalEntry.createMany({
+    data: [
+      { amount: 5000, note: "Week 1", goalId: spendingGoal.id },
+      { amount: 7000, note: "Week 2", goalId: spendingGoal.id },
+    ],
+  });
+
+  console.log(`Created 2 sample savings goals with entries`);
 }
 
 main()
