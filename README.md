@@ -24,14 +24,14 @@ Aplicativo de finanças pessoais com suporte a households (famílias/grupos). Co
 - [x] Gráfico anual comparativo no dashboard
 - [x] Gerenciamento de tags e categorias
 - [x] Tema claro/escuro
-- [ ] Metas de economia (savings goals) com progresso visual
-- [ ] Transações parceladas (installments) — suporte a compras no cartão
+- [x] Metas de economia (savings goals) com progresso visual
+- [x] Transações parceladas (installments) — suporte a compras no cartão
 - [ ] Importação de extrato bancário (CSV/OFX)
 - [ ] Relatórios e exportação (PDF/CSV) — evolução mensal, comparativos
 - [ ] Contas/carteiras (accounts) — separar por banco, cartão, carteira
 - [ ] Notificações e alertas de orçamento (80%/100% do limite)
 - [ ] Anexos em transações (comprovantes, notas fiscais)
-- [ ] Divisão de despesas entre membros do household (split)
+- [x] Divisão de despesas entre membros do household (split)
 
 ## Getting Started
 
