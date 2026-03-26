@@ -30,7 +30,7 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
     date: { gte: startDate, lt: endDate },
   };
 
-  const [totals, debtTotal, byCategory] = await Promise.all([
+  const [totals, debtTotal, repaymentTotal, byCategory] = await Promise.all([
     prisma.transaction.groupBy({
       by: ["type"],
       where: dateFilter,
@@ -38,6 +38,10 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
     }),
     prisma.transaction.aggregate({
       where: { ...dateFilter, type: "INCOME", isDebt: true },
+      _sum: { amount: true },
+    }),
+    prisma.debtRepayment.aggregate({
+      where: { transaction: { householdId: session.user.householdId }, date: { gte: startDate, lt: endDate } },
       _sum: { amount: true },
     }),
     prisma.transaction.groupBy({
@@ -51,6 +55,7 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
   const totalDebt = debtTotal._sum.amount ?? 0;
   const totalIncome = rawIncome - totalDebt;
   const totalExpense = totals.find((t) => t.type === "EXPENSE")?._sum.amount ?? 0;
+  const totalRepayments = repaymentTotal._sum.amount ?? 0;
 
   const categoryIds = byCategory.map((g) => g.categoryId).filter((id): id is string => id !== null);
   const categories = categoryIds.length > 0
@@ -65,7 +70,7 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
     totalIncome,
     totalDebt,
     totalExpense,
-    balance: totalIncome + totalDebt - totalExpense,
+    balance: totalIncome + totalDebt - totalExpense - totalRepayments,
     byCategory: byCategory
       .map((g) => {
         const cat = g.categoryId ? catMap.get(g.categoryId) : undefined;
@@ -90,7 +95,7 @@ export async function getGlobalBalance(): Promise<number> {
 
   const householdId = session.user.householdId;
 
-  const [totals, paidSplits] = await Promise.all([
+  const [totals, paidSplits, debtRepayments] = await Promise.all([
     prisma.transaction.groupBy({
       by: ["type"],
       where: { householdId, date: { gte: startDate, lt: endDate } },
@@ -104,13 +109,18 @@ export async function getGlobalBalance(): Promise<number> {
       },
       _sum: { amount: true },
     }),
+    prisma.debtRepayment.aggregate({
+      where: { transaction: { householdId }, date: { gte: startDate, lt: endDate } },
+      _sum: { amount: true },
+    }),
   ]);
 
   const income = totals.find((t) => t.type === "INCOME")?._sum.amount ?? 0;
   const expense = totals.find((t) => t.type === "EXPENSE")?._sum.amount ?? 0;
   const recovered = paidSplits._sum.amount ?? 0;
+  const repaid = debtRepayments._sum.amount ?? 0;
 
-  return income - expense + recovered;
+  return income - expense + recovered - repaid;
 }
 
 export async function getRecentTransactions(limit = 5, month?: string) {
