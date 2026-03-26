@@ -10,6 +10,7 @@ export const transactionSchema = z.object({
   categoryId: z.string().min(1, "Categoria é obrigatória"),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida"),
   tagIds: z.array(z.string().min(1)).max(2).optional(),
+  isDebt: z.boolean().optional().default(false),
 });
 
 export const installmentTransactionSchema = transactionSchema.extend({

@@ -7,7 +7,7 @@ import { getCurrentMonth, safeMonth } from "@/lib/utils/date";
 export async function getBills(month?: string) {
   const session = await requireAuth();
   const householdId = session.user.householdId;
-  if (!householdId) return { currentMonth: [], carryOver: [], totalPending: 0, totalPaid: 0, availableExpenses: [] };
+  if (!householdId) return { currentMonth: [], carryOver: [], totalPending: 0, totalPaid: 0, availableExpenses: [], debtIncomes: [], debtIncomeCarryOver: [] };
 
   const validMonth = safeMonth(month);
   const [year, m] = validMonth.split("-").map(Number);
@@ -87,5 +87,20 @@ export async function getBills(month?: string) {
     orderBy: { date: "desc" },
   });
 
-  return { currentMonth: currentMonthTx, carryOver: carryOverTx, totalPending, totalPaid, availableExpenses };
+  const debtIncomes = await prisma.transaction.findMany({
+    where: { householdId, type: "INCOME", isDebt: true, date: { gte: startDate, lt: endDate } },
+    select: { id: true, description: true, amount: true, date: true, debtPaid: true },
+    orderBy: { date: "desc" },
+  });
+
+  let debtIncomeCarryOver: typeof debtIncomes = [];
+  if (isCurrentOrFuture) {
+    debtIncomeCarryOver = await prisma.transaction.findMany({
+      where: { householdId, type: "INCOME", isDebt: true, debtPaid: false, date: { lt: startDate } },
+      select: { id: true, description: true, amount: true, date: true, debtPaid: true },
+      orderBy: { date: "desc" },
+    });
+  }
+
+  return { currentMonth: currentMonthTx, carryOver: carryOverTx, totalPending, totalPaid, availableExpenses, debtIncomes, debtIncomeCarryOver };
 }

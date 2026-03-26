@@ -23,6 +23,7 @@ interface Transaction {
   description: string;
   amount: number;
   type: TransactionType;
+  isDebt: boolean;
   date: Date;
   category: { id: string; name: string; color: string; type: TransactionType } | null;
   user: { name: string | null };
@@ -182,6 +183,7 @@ export function TransactionsList({
                 description: editing.description,
                 amount: editing.amount,
                 type: editing.type,
+                isDebt: editing.isDebt,
                 categoryId: editing.category?.id ?? "",
                 date: new Date(editing.date).toISOString().split("T")[0],
                 tagIds: editing.tags.map((t) => t.tag.id),
@@ -230,6 +232,11 @@ function TransactionRow({
           <div>
             <div className="flex items-center gap-2">
               <p className="font-medium">{tx.description}</p>
+              {tx.isDebt && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  Empréstimo
+                </Badge>
+              )}
               {tx.recurringOccurrence && (
                 <Badge variant="secondary" className="gap-1 text-[10px] px-1.5 py-0">
                   <Repeat className="h-3 w-3" />

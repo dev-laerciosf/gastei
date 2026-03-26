@@ -29,6 +29,8 @@ export default async function BillsPage({ searchParams }: Props) {
         totalPending={result.totalPending}
         totalPaid={result.totalPaid}
         availableExpenses={result.availableExpenses}
+        debtIncomes={result.debtIncomes ?? []}
+        debtIncomeCarryOver={result.debtIncomeCarryOver ?? []}
       />
     </div>
   );

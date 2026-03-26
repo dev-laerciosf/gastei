@@ -3,11 +3,12 @@ import { formatCurrency } from "@/lib/utils/money";
 
 interface SummaryCardsProps {
   totalIncome: number;
+  totalDebt: number;
   totalExpense: number;
   balance: number;
 }
 
-export function SummaryCards({ totalIncome, totalExpense, balance }: SummaryCardsProps) {
+export function SummaryCards({ totalIncome, totalDebt, totalExpense, balance }: SummaryCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900/50 dark:bg-emerald-950/20">
@@ -20,6 +21,11 @@ export function SummaryCards({ totalIncome, totalExpense, balance }: SummaryCard
         <p className="mt-2 text-3xl font-bold font-mono tabular-nums text-emerald-700 dark:text-emerald-300">
           {formatCurrency(totalIncome)}
         </p>
+        {totalDebt > 0 && (
+          <p className="mt-1 text-xs text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+            + {formatCurrency(totalDebt)} em empréstimos
+          </p>
+        )}
       </div>
 
       <div className="rounded-lg border border-rose-200 bg-rose-50 p-5 dark:border-rose-900/50 dark:bg-rose-950/20">

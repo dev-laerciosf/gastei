@@ -24,6 +24,7 @@ interface TransactionData {
   categoryId: string;
   date: string;
   tagIds?: string[];
+  isDebt?: boolean;
 }
 
 interface TransactionFormProps {
@@ -40,6 +41,7 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
   const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? "");
   const [tagIds, setTagIds] = useState<string[]>(transaction?.tagIds ?? []);
   const [isInstallment, setIsInstallment] = useState(false);
+  const [isDebt, setIsDebt] = useState(transaction?.isDebt ?? false);
   const isEditing = !!transaction;
 
   useEffect(() => {
@@ -48,8 +50,9 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
       setCategoryId(transaction?.categoryId ?? "");
       setTagIds(transaction?.tagIds ?? []);
       setIsInstallment(false);
+      setIsDebt(transaction?.isDebt ?? false);
     }
-  }, [open, transaction?.type, transaction?.categoryId, transaction?.tagIds]);
+  }, [open, transaction?.type, transaction?.categoryId, transaction?.tagIds, transaction?.isDebt]);
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
@@ -59,6 +62,9 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
     if (currentCat && currentCat.type !== newType) {
       setCategoryId("");
     }
+    if (newType === "EXPENSE") {
+      setIsDebt(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -67,6 +73,7 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
     const formData = new FormData(e.currentTarget);
     formData.set("type", type);
     formData.set("tagIds", JSON.stringify(tagIds));
+    formData.set("isDebt", isDebt ? "true" : "false");
 
     const validationError = validateTransactionFormData(formData);
     if (validationError) {
@@ -125,6 +132,16 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
               Receita
             </Button>
           </div>
+          {type === "INCOME" && (
+            <div className="flex items-center justify-between">
+              <Label htmlFor="debt-toggle">É um empréstimo?</Label>
+              <Switch
+                id="debt-toggle"
+                checked={isDebt}
+                onCheckedChange={setIsDebt}
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
             <Input id="description" name="description" defaultValue={transaction?.description} required />

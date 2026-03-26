@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
 import { transactionSchema, installmentTransactionSchema } from "@/lib/validations/transaction";
 import { parseCurrency } from "@/lib/utils/money";
-import { getCurrentMonth } from "@/lib/utils/date";
 import type { Transaction, Category, Prisma } from "@prisma/client";
 
 interface GetTransactionsParams {
@@ -126,6 +125,7 @@ export async function createTransaction(formData: FormData) {
     categoryId: formData.get("categoryId"),
     date: formData.get("date"),
     tagIds,
+    isDebt: formData.get("isDebt") === "true",
   });
 
   if (!parsed.success) {
@@ -148,6 +148,8 @@ export async function createTransaction(formData: FormData) {
     }
   }
 
+  const isDebt = parsed.data.type === "INCOME" && (parsed.data.isDebt ?? false);
+
   try {
     await prisma.$transaction(async (tx) => {
       const transaction = await tx.transaction.create({
@@ -155,6 +157,7 @@ export async function createTransaction(formData: FormData) {
           description: parsed.data.description,
           amount: parseCurrency(parsed.data.amount),
           type: parsed.data.type,
+          isDebt,
           date: new Date(parsed.data.date + "T00:00:00Z"),
           categoryId: parsed.data.categoryId,
           userId: session.user.id,
@@ -202,6 +205,7 @@ export async function updateTransaction(id: string, formData: FormData) {
     categoryId: formData.get("categoryId"),
     date: formData.get("date"),
     tagIds,
+    isDebt: formData.get("isDebt") === "true",
   });
 
   if (!parsed.success) {
@@ -233,6 +237,8 @@ export async function updateTransaction(id: string, formData: FormData) {
     }
   }
 
+  const isDebt = parsed.data.type === "INCOME" && (parsed.data.isDebt ?? false);
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.transaction.update({
@@ -241,6 +247,7 @@ export async function updateTransaction(id: string, formData: FormData) {
           description: parsed.data.description,
           amount: parseCurrency(parsed.data.amount),
           type: parsed.data.type,
+          isDebt,
           date: new Date(parsed.data.date + "T00:00:00Z"),
           categoryId: parsed.data.categoryId,
         },

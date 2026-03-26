@@ -64,6 +64,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         <>
           <SummaryCards
             totalIncome={summary.totalIncome}
+            totalDebt={summary.totalDebt}
             totalExpense={summary.totalExpense}
             balance={summary.balance}
           />

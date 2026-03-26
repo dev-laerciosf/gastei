@@ -121,6 +121,31 @@ export async function deleteSplitEntries(transactionId: string) {
   return { success: true };
 }
 
+export async function toggleDebtPaid(transactionId: string) {
+  const session = await requireAuth();
+  const householdId = session.user.householdId;
+  if (!householdId) return { error: "Grupo não encontrado" };
+
+  const transaction = await prisma.transaction.findFirst({
+    where: { id: transactionId, householdId, isDebt: true },
+  });
+
+  if (!transaction) return { error: "Transação não encontrada" };
+
+  try {
+    await prisma.transaction.update({
+      where: { id: transactionId },
+      data: { debtPaid: !transaction.debtPaid },
+    });
+  } catch (error) {
+    console.error("Failed to toggle debt paid:", error);
+    return { error: "Erro ao atualizar status. Tente novamente." };
+  }
+
+  revalidateSplitPaths();
+  return { success: true };
+}
+
 export async function toggleSplitPaid(entryId: string) {
   const session = await requireAuth();
   const householdId = session.user.householdId;

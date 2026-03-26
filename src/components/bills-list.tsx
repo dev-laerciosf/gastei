@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { createSplitEntries, toggleSplitPaid } from "@/lib/actions/splits";
+import { createSplitEntries, toggleSplitPaid, toggleDebtPaid } from "@/lib/actions/splits";
 import { formatCurrency } from "@/lib/utils/money";
 import { toast } from "sonner";
 
@@ -42,6 +42,14 @@ interface AvailableExpense {
   date: Date;
 }
 
+interface DebtIncome {
+  id: string;
+  description: string;
+  amount: number;
+  date: Date;
+  debtPaid: boolean;
+}
+
 interface CategoryGroup {
   categoryId: string;
   categoryName: string;
@@ -63,15 +71,17 @@ interface BillsListProps {
   totalPending: number;
   totalPaid: number;
   availableExpenses: AvailableExpense[];
+  debtIncomes: DebtIncome[];
+  debtIncomeCarryOver: DebtIncome[];
 }
 
-export function BillsList({ currentMonth, carryOver, totalPending, totalPaid, availableExpenses }: BillsListProps) {
+export function BillsList({ currentMonth, carryOver, totalPending, totalPaid, availableExpenses, debtIncomes, debtIncomeCarryOver }: BillsListProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showPaid, setShowPaid] = useState(false);
   const [newBill, setNewBill] = useState<NewBillState | null>(null);
   const [saving, startSaveTransition] = useTransition();
 
-  const hasData = currentMonth.length > 0 || carryOver.length > 0;
+  const hasData = currentMonth.length > 0 || carryOver.length > 0 || debtIncomes.length > 0 || debtIncomeCarryOver.length > 0;
 
   function handleSelectTransaction(txId: string) {
     const tx = availableExpenses.find((e) => e.id === txId);
@@ -208,6 +218,10 @@ export function BillsList({ currentMonth, carryOver, totalPending, totalPaid, av
               ))}
             </div>
           )}
+
+          {(debtIncomes.length > 0 || debtIncomeCarryOver.length > 0) && (
+            <DebtIncomesSection debtIncomes={debtIncomes} debtIncomeCarryOver={debtIncomeCarryOver} />
+          )}
         </>
       )}
 
@@ -274,6 +288,91 @@ export function BillsList({ currentMonth, carryOver, totalPending, totalPaid, av
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function DebtIncomesSection({ debtIncomes, debtIncomeCarryOver }: { debtIncomes: DebtIncome[]; debtIncomeCarryOver: DebtIncome[] }) {
+  const [toggling, startToggleTransition] = useTransition();
+
+  function handleToggle(id: string) {
+    startToggleTransition(async () => {
+      const result = await toggleDebtPaid(id);
+      if (result.error) toast.error(result.error);
+    });
+  }
+
+  const pendingThisMonth = debtIncomes.filter((d) => !d.debtPaid);
+  const paidThisMonth = debtIncomes.filter((d) => d.debtPaid);
+  const totalPendingDebt = [...pendingThisMonth, ...debtIncomeCarryOver].reduce((acc, d) => acc + d.amount, 0);
+
+  return (
+    <div className="space-y-2 pt-2">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Empréstimos recebidos</p>
+        {totalPendingDebt > 0 && (
+          <span className="text-xs text-rose-600 font-mono tabular-nums">
+            A devolver: {formatCurrency(totalPendingDebt)}
+          </span>
+        )}
+      </div>
+
+      {debtIncomeCarryOver.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <History className="h-3.5 w-3.5" />
+            Meses anteriores
+          </p>
+          {debtIncomeCarryOver.map((debt) => (
+            <DebtIncomeRow key={debt.id} debt={debt} onToggle={handleToggle} toggling={toggling} />
+          ))}
+        </div>
+      )}
+
+      {pendingThisMonth.length > 0 && (
+        <div className="space-y-1">
+          {pendingThisMonth.map((debt) => (
+            <DebtIncomeRow key={debt.id} debt={debt} onToggle={handleToggle} toggling={toggling} />
+          ))}
+        </div>
+      )}
+
+      {paidThisMonth.length > 0 && (
+        <div className="space-y-1">
+          {paidThisMonth.map((debt) => (
+            <DebtIncomeRow key={debt.id} debt={debt} onToggle={handleToggle} toggling={toggling} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DebtIncomeRow({ debt, onToggle, toggling }: { debt: DebtIncome; onToggle: (id: string) => void; toggling: boolean }) {
+  return (
+    <div className="flex items-center justify-between rounded-md border px-4 py-2">
+      <div>
+        <p className={`text-sm font-medium ${debt.debtPaid ? "line-through text-muted-foreground" : ""}`}>
+          {debt.description}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {format(toUTCDate(debt.date), "dd MMM yyyy", { locale: ptBR })}
+        </p>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className={`font-mono tabular-nums text-sm ${debt.debtPaid ? "text-muted-foreground line-through" : "text-rose-600"}`}>
+          {formatCurrency(debt.amount)}
+        </span>
+        <Button
+          variant={debt.debtPaid ? "secondary" : "outline"}
+          size="sm"
+          className={`h-7 text-xs gap-1 ${debt.debtPaid ? "text-emerald-600" : ""}`}
+          disabled={toggling}
+          onClick={() => onToggle(debt.id)}
+        >
+          {debt.debtPaid ? <><Check className="h-3 w-3" /> Devolvido</> : "Marcar como devolvido"}
+        </Button>
+      </div>
     </div>
   );
 }

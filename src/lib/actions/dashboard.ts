@@ -8,6 +8,7 @@ import type { TagSummary } from "@/types";
 
 export interface MonthlySummary {
   totalIncome: number;
+  totalDebt: number;
   totalExpense: number;
   balance: number;
   byCategory: { name: string; color: string; total: number; type: "INCOME" | "EXPENSE" }[];
@@ -16,7 +17,7 @@ export interface MonthlySummary {
 export async function getMonthlySummary(month?: string): Promise<MonthlySummary> {
   const session = await requireAuth();
   if (!session.user.householdId) {
-    return { totalIncome: 0, totalExpense: 0, balance: 0, byCategory: [] };
+    return { totalIncome: 0, totalDebt: 0, totalExpense: 0, balance: 0, byCategory: [] };
   }
 
   const targetMonth = safeMonth(month);
@@ -29,10 +30,14 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
     date: { gte: startDate, lt: endDate },
   };
 
-  const [totals, byCategory] = await Promise.all([
+  const [totals, debtTotal, byCategory] = await Promise.all([
     prisma.transaction.groupBy({
       by: ["type"],
       where: dateFilter,
+      _sum: { amount: true },
+    }),
+    prisma.transaction.aggregate({
+      where: { ...dateFilter, type: "INCOME", isDebt: true },
       _sum: { amount: true },
     }),
     prisma.transaction.groupBy({
@@ -42,7 +47,9 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
     }),
   ]);
 
-  const totalIncome = totals.find((t) => t.type === "INCOME")?._sum.amount ?? 0;
+  const rawIncome = totals.find((t) => t.type === "INCOME")?._sum.amount ?? 0;
+  const totalDebt = debtTotal._sum.amount ?? 0;
+  const totalIncome = rawIncome - totalDebt;
   const totalExpense = totals.find((t) => t.type === "EXPENSE")?._sum.amount ?? 0;
 
   const categoryIds = byCategory.map((g) => g.categoryId).filter((id): id is string => id !== null);
@@ -56,8 +63,9 @@ export async function getMonthlySummary(month?: string): Promise<MonthlySummary>
 
   return {
     totalIncome,
+    totalDebt,
     totalExpense,
-    balance: totalIncome - totalExpense,
+    balance: totalIncome + totalDebt - totalExpense,
     byCategory: byCategory
       .map((g) => {
         const cat = g.categoryId ? catMap.get(g.categoryId) : undefined;
