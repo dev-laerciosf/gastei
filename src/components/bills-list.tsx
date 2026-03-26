@@ -364,6 +364,13 @@ function DebtIncomeRow({ debt }: { debt: DebtIncome }) {
   const remaining = Math.max(0, debt.amount - totalRepaid);
   const isFullyPaid = debt.debtPaid || remaining === 0;
 
+  function handlePayFull() {
+    startAddTransition(async () => {
+      const result = await addDebtRepayment(debt.id, remaining);
+      if (result.error) toast.error(result.error);
+    });
+  }
+
   function handleAdd() {
     if (amount <= 0) { toast.error("Valor deve ser maior que zero"); return; }
     startAddTransition(async () => {
@@ -413,8 +420,11 @@ function DebtIncomeRow({ debt }: { debt: DebtIncome }) {
             ) : (
               <>
                 <span className="font-mono tabular-nums text-sm text-rose-600">{formatCurrency(remaining)}</span>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30" disabled={adding} onClick={handlePayFull}>
+                  <Check className="h-3 w-3" /> Pagar total
+                </Button>
                 <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setOpen(true)}>
-                  <Plus className="h-3 w-3" /> Registrar
+                  <Plus className="h-3 w-3" /> Parcial
                 </Button>
               </>
             )}
