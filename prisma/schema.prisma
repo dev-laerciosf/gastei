@@ -120,9 +120,10 @@ model Transaction {
   description String
   amount      Int
   type        TransactionType
-  isDebt      Boolean         @default(false)
-  debtPaid    Boolean         @default(false)
-  date        DateTime
+  isDebt          Boolean         @default(false)
+  debtPaid        Boolean         @default(false)
+  debtPersonName  String?
+  date            DateTime
   createdAt   DateTime        @default(now())
 
   categoryId String?

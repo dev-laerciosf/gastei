@@ -25,6 +25,7 @@ interface TransactionData {
   date: string;
   tagIds?: string[];
   isDebt?: boolean;
+  debtPersonName?: string;
 }
 
 interface TransactionFormProps {
@@ -139,6 +140,17 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
                 id="debt-toggle"
                 checked={isDebt}
                 onCheckedChange={setIsDebt}
+              />
+            </div>
+          )}
+          {isDebt && type === "INCOME" && (
+            <div className="space-y-2">
+              <Label htmlFor="debtPersonName">De quem?</Label>
+              <Input
+                id="debtPersonName"
+                name="debtPersonName"
+                placeholder="Ex: Namorada, Amigo João..."
+                defaultValue={transaction?.debtPersonName}
               />
             </div>
           )}

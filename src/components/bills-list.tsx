@@ -48,6 +48,7 @@ interface DebtIncome {
   amount: number;
   date: Date;
   debtPaid: boolean;
+  debtPersonName: string | null;
 }
 
 interface CategoryGroup {
@@ -356,6 +357,7 @@ function DebtIncomeRow({ debt, onToggle, toggling }: { debt: DebtIncome; onToggl
           {debt.description}
         </p>
         <p className="text-xs text-muted-foreground">
+          {debt.debtPersonName && <span className="font-medium text-amber-600 dark:text-amber-400">{debt.debtPersonName} · </span>}
           {format(toUTCDate(debt.date), "dd MMM yyyy", { locale: ptBR })}
         </p>
       </div>

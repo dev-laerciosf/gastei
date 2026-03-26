@@ -126,6 +126,7 @@ export async function createTransaction(formData: FormData) {
     date: formData.get("date"),
     tagIds,
     isDebt: formData.get("isDebt") === "true",
+    debtPersonName: (formData.get("debtPersonName") as string) || undefined,
   });
 
   if (!parsed.success) {
@@ -158,6 +159,7 @@ export async function createTransaction(formData: FormData) {
           amount: parseCurrency(parsed.data.amount),
           type: parsed.data.type,
           isDebt,
+          debtPersonName: isDebt ? (parsed.data.debtPersonName ?? null) : null,
           date: new Date(parsed.data.date + "T00:00:00Z"),
           categoryId: parsed.data.categoryId,
           userId: session.user.id,
@@ -206,6 +208,7 @@ export async function updateTransaction(id: string, formData: FormData) {
     date: formData.get("date"),
     tagIds,
     isDebt: formData.get("isDebt") === "true",
+    debtPersonName: (formData.get("debtPersonName") as string) || undefined,
   });
 
   if (!parsed.success) {
@@ -248,6 +251,7 @@ export async function updateTransaction(id: string, formData: FormData) {
           amount: parseCurrency(parsed.data.amount),
           type: parsed.data.type,
           isDebt,
+          debtPersonName: isDebt ? (parsed.data.debtPersonName ?? null) : null,
           date: new Date(parsed.data.date + "T00:00:00Z"),
           categoryId: parsed.data.categoryId,
         },

@@ -24,6 +24,7 @@ interface Transaction {
   amount: number;
   type: TransactionType;
   isDebt: boolean;
+  debtPersonName?: string | null;
   date: Date;
   category: { id: string; name: string; color: string; type: TransactionType } | null;
   user: { name: string | null };
@@ -184,6 +185,7 @@ export function TransactionsList({
                 amount: editing.amount,
                 type: editing.type,
                 isDebt: editing.isDebt,
+                debtPersonName: editing.debtPersonName ?? undefined,
                 categoryId: editing.category?.id ?? "",
                 date: new Date(editing.date).toISOString().split("T")[0],
                 tagIds: editing.tags.map((t) => t.tag.id),
@@ -268,6 +270,7 @@ function TransactionRow({
             <p className="text-sm text-muted-foreground">
               {tx.category?.name ?? "Sem categoria"} · {format(toUTCDate(tx.date), "dd MMM yyyy", { locale: ptBR })}
               {tx.user.name && ` · ${tx.user.name}`}
+              {tx.isDebt && tx.debtPersonName && ` · ${tx.debtPersonName}`}
             </p>
           </div>
         </div>
