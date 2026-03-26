@@ -89,7 +89,10 @@ export async function getBills(month?: string) {
 
   const debtIncomes = await prisma.transaction.findMany({
     where: { householdId, type: "INCOME", isDebt: true, date: { gte: startDate, lt: endDate } },
-    select: { id: true, description: true, amount: true, date: true, debtPaid: true, debtPersonName: true },
+    select: {
+      id: true, description: true, amount: true, date: true, debtPaid: true, debtPersonName: true,
+      repayments: { select: { id: true, amount: true, note: true, date: true }, orderBy: { date: "asc" as const } },
+    },
     orderBy: { date: "desc" },
   });
 
@@ -97,7 +100,10 @@ export async function getBills(month?: string) {
   if (isCurrentOrFuture) {
     debtIncomeCarryOver = await prisma.transaction.findMany({
       where: { householdId, type: "INCOME", isDebt: true, debtPaid: false, date: { lt: startDate } },
-      select: { id: true, description: true, amount: true, date: true, debtPaid: true, debtPersonName: true },
+      select: {
+      id: true, description: true, amount: true, date: true, debtPaid: true, debtPersonName: true,
+      repayments: { select: { id: true, amount: true, note: true, date: true }, orderBy: { date: "asc" as const } },
+    },
       orderBy: { date: "desc" },
     });
   }

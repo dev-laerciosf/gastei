@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
-import { createSplitEntries, toggleSplitPaid, toggleDebtPaid } from "@/lib/actions/splits";
+import { createSplitEntries, toggleSplitPaid, addDebtRepayment, removeDebtRepayment } from "@/lib/actions/splits";
 import { formatCurrency } from "@/lib/utils/money";
 import { toast } from "sonner";
 
@@ -42,6 +42,13 @@ interface AvailableExpense {
   date: Date;
 }
 
+interface DebtRepayment {
+  id: string;
+  amount: number;
+  note: string | null;
+  date: Date;
+}
+
 interface DebtIncome {
   id: string;
   description: string;
@@ -49,6 +56,7 @@ interface DebtIncome {
   date: Date;
   debtPaid: boolean;
   debtPersonName: string | null;
+  repayments: DebtRepayment[];
 }
 
 interface CategoryGroup {
@@ -294,18 +302,13 @@ export function BillsList({ currentMonth, carryOver, totalPending, totalPaid, av
 }
 
 function DebtIncomesSection({ debtIncomes, debtIncomeCarryOver }: { debtIncomes: DebtIncome[]; debtIncomeCarryOver: DebtIncome[] }) {
-  const [toggling, startToggleTransition] = useTransition();
-
-  function handleToggle(id: string) {
-    startToggleTransition(async () => {
-      const result = await toggleDebtPaid(id);
-      if (result.error) toast.error(result.error);
-    });
-  }
-
   const pendingThisMonth = debtIncomes.filter((d) => !d.debtPaid);
   const paidThisMonth = debtIncomes.filter((d) => d.debtPaid);
-  const totalPendingDebt = [...pendingThisMonth, ...debtIncomeCarryOver].reduce((acc, d) => acc + d.amount, 0);
+
+  const totalPendingDebt = [...pendingThisMonth, ...debtIncomeCarryOver].reduce((acc, d) => {
+    const repaid = d.repayments.reduce((s, r) => s + r.amount, 0);
+    return acc + Math.max(0, d.amount - repaid);
+  }, 0);
 
   return (
     <div className="space-y-2 pt-2">
@@ -325,7 +328,7 @@ function DebtIncomesSection({ debtIncomes, debtIncomeCarryOver }: { debtIncomes:
             Meses anteriores
           </p>
           {debtIncomeCarryOver.map((debt) => (
-            <DebtIncomeRow key={debt.id} debt={debt} onToggle={handleToggle} toggling={toggling} />
+            <DebtIncomeRow key={debt.id} debt={debt} />
           ))}
         </div>
       )}
@@ -333,7 +336,7 @@ function DebtIncomesSection({ debtIncomes, debtIncomeCarryOver }: { debtIncomes:
       {pendingThisMonth.length > 0 && (
         <div className="space-y-1">
           {pendingThisMonth.map((debt) => (
-            <DebtIncomeRow key={debt.id} debt={debt} onToggle={handleToggle} toggling={toggling} />
+            <DebtIncomeRow key={debt.id} debt={debt} />
           ))}
         </div>
       )}
@@ -341,7 +344,7 @@ function DebtIncomesSection({ debtIncomes, debtIncomeCarryOver }: { debtIncomes:
       {paidThisMonth.length > 0 && (
         <div className="space-y-1">
           {paidThisMonth.map((debt) => (
-            <DebtIncomeRow key={debt.id} debt={debt} onToggle={handleToggle} toggling={toggling} />
+            <DebtIncomeRow key={debt.id} debt={debt} />
           ))}
         </div>
       )}
@@ -349,33 +352,133 @@ function DebtIncomesSection({ debtIncomes, debtIncomeCarryOver }: { debtIncomes:
   );
 }
 
-function DebtIncomeRow({ debt, onToggle, toggling }: { debt: DebtIncome; onToggle: (id: string) => void; toggling: boolean }) {
+function DebtIncomeRow({ debt }: { debt: DebtIncome }) {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState(0);
+  const [note, setNote] = useState("");
+  const [resetKey, setResetKey] = useState(0);
+  const [adding, startAddTransition] = useTransition();
+  const [removing, startRemoveTransition] = useTransition();
+
+  const totalRepaid = debt.repayments.reduce((acc, r) => acc + r.amount, 0);
+  const remaining = Math.max(0, debt.amount - totalRepaid);
+  const isFullyPaid = debt.debtPaid || remaining === 0;
+
+  function handleAdd() {
+    if (amount <= 0) { toast.error("Valor deve ser maior que zero"); return; }
+    startAddTransition(async () => {
+      const result = await addDebtRepayment(debt.id, amount, note || undefined);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        setAmount(0);
+        setNote("");
+        setResetKey((k) => k + 1);
+      }
+    });
+  }
+
+  function handleRemove(repaymentId: string) {
+    startRemoveTransition(async () => {
+      const result = await removeDebtRepayment(repaymentId);
+      if (result.error) toast.error(result.error);
+    });
+  }
+
   return (
-    <div className="flex items-center justify-between rounded-md border px-4 py-2">
-      <div>
-        <p className={`text-sm font-medium ${debt.debtPaid ? "line-through text-muted-foreground" : ""}`}>
-          {debt.description}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {debt.debtPersonName && <span className="font-medium text-amber-600 dark:text-amber-400">{debt.debtPersonName} · </span>}
-          {format(toUTCDate(debt.date), "dd MMM yyyy", { locale: ptBR })}
-        </p>
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="rounded-md border">
+        <div className="flex items-center justify-between px-4 py-2 gap-2">
+          <div className="min-w-0">
+            <p className={`text-sm font-medium truncate ${isFullyPaid ? "line-through text-muted-foreground" : ""}`}>
+              {debt.description}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {debt.debtPersonName && (
+                <span className="font-medium text-amber-600 dark:text-amber-400">{debt.debtPersonName} · </span>
+              )}
+              {format(toUTCDate(debt.date), "dd MMM yyyy", { locale: ptBR })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {totalRepaid > 0 && !isFullyPaid && (
+              <span className="text-xs text-muted-foreground font-mono tabular-nums hidden sm:inline">
+                {formatCurrency(totalRepaid)} / {formatCurrency(debt.amount)}
+              </span>
+            )}
+            {isFullyPaid ? (
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-emerald-600">
+                <Check className="h-3 w-3 mr-0.5" /> Devolvido
+              </Badge>
+            ) : (
+              <>
+                <span className="font-mono tabular-nums text-sm text-rose-600">{formatCurrency(remaining)}</span>
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setOpen(true)}>
+                  <Plus className="h-3 w-3" /> Registrar
+                </Button>
+              </>
+            )}
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+        </div>
+
+        <CollapsibleContent>
+          <div className="border-t px-4 py-2 space-y-2">
+            {debt.repayments.length > 0 ? (
+              <div className="space-y-1">
+                {debt.repayments.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {format(toUTCDate(r.date), "dd MMM yyyy", { locale: ptBR })}
+                      {r.note && <span className="ml-1 italic">· {r.note}</span>}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono tabular-nums text-emerald-600">{formatCurrency(r.amount)}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                        disabled={removing}
+                        onClick={() => handleRemove(r.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Nenhuma devolução registrada ainda.</p>
+            )}
+
+            {!isFullyPaid && (
+              <div className="flex gap-2 pt-1">
+                <CurrencyInput
+                  key={resetKey}
+                  name={`repayment-${debt.id}`}
+                  defaultValueCents={0}
+                  className="flex-1 h-8 text-sm"
+                  onValueChange={setAmount}
+                />
+                <Input
+                  placeholder="Observação"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="flex-1 h-8 text-sm"
+                />
+                <Button size="sm" className="h-8 shrink-0" disabled={adding || amount <= 0} onClick={handleAdd}>
+                  {adding ? "..." : "Salvar"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <span className={`font-mono tabular-nums text-sm ${debt.debtPaid ? "text-muted-foreground line-through" : "text-rose-600"}`}>
-          {formatCurrency(debt.amount)}
-        </span>
-        <Button
-          variant={debt.debtPaid ? "secondary" : "outline"}
-          size="sm"
-          className={`h-7 text-xs gap-1 ${debt.debtPaid ? "text-emerald-600" : ""}`}
-          disabled={toggling}
-          onClick={() => onToggle(debt.id)}
-        >
-          {debt.debtPaid ? <><Check className="h-3 w-3" /> Devolvido</> : "Marcar como devolvido"}
-        </Button>
-      </div>
-    </div>
+    </Collapsible>
   );
 }
 

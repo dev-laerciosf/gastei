@@ -138,6 +138,7 @@ model Transaction {
   recurringOccurrence RecurringOccurrence?
   tags                TransactionTag[]
   splitEntries        SplitEntry[]
+  repayments          DebtRepayment[]
 
   @@index([householdId, date])
   @@index([householdId, categoryId])
@@ -199,6 +200,19 @@ model RecurringOccurrence {
 
   @@unique([recurringTransactionId, month])
   @@map("recurring_occurrences")
+}
+
+model DebtRepayment {
+  id        String   @id @default(cuid())
+  amount    Int
+  note      String?
+  date      DateTime @default(now())
+
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@map("debt_repayments")
 }
 
 model SplitEntry {

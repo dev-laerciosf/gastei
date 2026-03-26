@@ -121,6 +121,78 @@ export async function deleteSplitEntries(transactionId: string) {
   return { success: true };
 }
 
+export async function addDebtRepayment(transactionId: string, amount: number, note?: string) {
+  const session = await requireAuth();
+  const householdId = session.user.householdId;
+  if (!householdId) return { error: "Grupo não encontrado" };
+
+  if (!amount || amount <= 0) return { error: "Valor deve ser maior que zero" };
+
+  const transaction = await prisma.transaction.findFirst({
+    where: { id: transactionId, householdId, isDebt: true },
+    include: { repayments: { select: { amount: true } } },
+  });
+
+  if (!transaction) return { error: "Transação não encontrada" };
+
+  const totalRepaid = transaction.repayments.reduce((acc, r) => acc + r.amount, 0);
+  const remaining = transaction.amount - totalRepaid;
+
+  if (amount > remaining) return { error: "Valor excede o saldo restante" };
+
+  const newTotal = totalRepaid + amount;
+  const debtPaid = newTotal >= transaction.amount;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.debtRepayment.create({ data: { transactionId, amount, note: note ?? null } });
+      if (debtPaid !== transaction.debtPaid) {
+        await tx.transaction.update({ where: { id: transactionId }, data: { debtPaid } });
+      }
+    });
+  } catch (error) {
+    console.error("Failed to add debt repayment:", error);
+    return { error: "Erro ao registrar devolução. Tente novamente." };
+  }
+
+  revalidateSplitPaths();
+  return { success: true };
+}
+
+export async function removeDebtRepayment(repaymentId: string) {
+  const session = await requireAuth();
+  const householdId = session.user.householdId;
+  if (!householdId) return { error: "Grupo não encontrado" };
+
+  const repayment = await prisma.debtRepayment.findFirst({
+    where: { id: repaymentId, transaction: { householdId } },
+    include: { transaction: { include: { repayments: { select: { id: true, amount: true } } } } },
+  });
+
+  if (!repayment) return { error: "Devolução não encontrada" };
+
+  const remainingTotal = repayment.transaction.repayments
+    .filter((r) => r.id !== repaymentId)
+    .reduce((acc, r) => acc + r.amount, 0);
+
+  const debtPaid = remainingTotal >= repayment.transaction.amount;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.debtRepayment.delete({ where: { id: repaymentId } });
+      if (debtPaid !== repayment.transaction.debtPaid) {
+        await tx.transaction.update({ where: { id: repayment.transactionId }, data: { debtPaid } });
+      }
+    });
+  } catch (error) {
+    console.error("Failed to remove debt repayment:", error);
+    return { error: "Erro ao remover devolução. Tente novamente." };
+  }
+
+  revalidateSplitPaths();
+  return { success: true };
+}
+
 export async function toggleDebtPaid(transactionId: string) {
   const session = await requireAuth();
   const householdId = session.user.householdId;
