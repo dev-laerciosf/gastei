@@ -395,51 +395,60 @@ function DebtIncomeRow({ debt }: { debt: DebtIncome }) {
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <div className="rounded-md border">
-        <div className="flex items-center justify-between px-4 py-2 gap-2">
-          <div className="min-w-0">
-            <p className={`text-sm font-medium truncate ${isFullyPaid ? "line-through text-muted-foreground" : ""}`}>
-              {debt.description}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {debt.debtPersonName && (
-                <span className="font-medium text-amber-600 dark:text-amber-400">{debt.debtPersonName} · </span>
+        <CollapsibleTrigger asChild>
+          <div className="flex items-center justify-between px-4 py-3 gap-3 cursor-pointer hover:bg-muted/40 transition-colors rounded-t-md">
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-medium truncate ${isFullyPaid ? "line-through text-muted-foreground" : ""}`}>
+                {debt.description}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {debt.debtPersonName && (
+                  <span className="font-medium text-amber-600 dark:text-amber-400">{debt.debtPersonName} · </span>
+                )}
+                {format(toUTCDate(debt.date), "dd MMM yyyy", { locale: ptBR })}
+                {totalRepaid > 0 && !isFullyPaid && (
+                  <span className="ml-1 font-mono tabular-nums">· {formatCurrency(totalRepaid)} / {formatCurrency(debt.amount)}</span>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {isFullyPaid ? (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-emerald-600">
+                  <Check className="h-3 w-3 mr-0.5" /> Devolvido
+                </Badge>
+              ) : (
+                <>
+                  <span className="font-mono tabular-nums text-sm text-rose-600">{formatCurrency(remaining)}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7 text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30 shrink-0"
+                    disabled={adding}
+                    onClick={(e) => { e.stopPropagation(); handlePayFull(); }}
+                    title="Pagar total"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={(e) => { e.stopPropagation(); setOpen(true); }}
+                    title="Registrar devolução parcial"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </>
               )}
-              {format(toUTCDate(debt.date), "dd MMM yyyy", { locale: ptBR })}
-            </p>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {totalRepaid > 0 && !isFullyPaid && (
-              <span className="text-xs text-muted-foreground font-mono tabular-nums hidden sm:inline">
-                {formatCurrency(totalRepaid)} / {formatCurrency(debt.amount)}
-              </span>
-            )}
-            {isFullyPaid ? (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 text-emerald-600">
-                <Check className="h-3 w-3 mr-0.5" /> Devolvido
-              </Badge>
-            ) : (
-              <>
-                <span className="font-mono tabular-nums text-sm text-rose-600">{formatCurrency(remaining)}</span>
-                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30" disabled={adding} onClick={handlePayFull}>
-                  <Check className="h-3 w-3" /> Pagar total
-                </Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setOpen(true)}>
-                  <Plus className="h-3 w-3" /> Parcial
-                </Button>
-              </>
-            )}
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-        </div>
+        </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="border-t px-4 py-2 space-y-2">
+          <div className="border-t px-4 py-3 space-y-3">
             {debt.repayments.length > 0 ? (
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {debt.repayments.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">
@@ -466,22 +475,22 @@ function DebtIncomeRow({ debt }: { debt: DebtIncome }) {
             )}
 
             {!isFullyPaid && (
-              <div className="flex gap-2 pt-1">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <CurrencyInput
                   key={resetKey}
                   name={`repayment-${debt.id}`}
                   defaultValueCents={0}
-                  className="flex-1 h-8 text-sm"
+                  className="h-9 text-sm"
                   onValueChange={setAmount}
                 />
                 <Input
-                  placeholder="Observação"
+                  placeholder="Observação (opcional)"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="flex-1 h-8 text-sm"
+                  className="h-9 text-sm"
                 />
-                <Button size="sm" className="h-8 shrink-0" disabled={adding || amount <= 0} onClick={handleAdd}>
-                  {adding ? "..." : "Salvar"}
+                <Button className="h-9 shrink-0" disabled={adding || amount <= 0} onClick={handleAdd}>
+                  {adding ? "Salvando..." : "Salvar"}
                 </Button>
               </div>
             )}
