@@ -84,8 +84,8 @@ export function GoalList({ goals, currentUserId }: GoalListProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex gap-2 flex-wrap">
           {(["ALL", "SAVINGS", "SPENDING"] as const).map((t) => (
             <Button
               key={t}
@@ -97,7 +97,7 @@ export function GoalList({ goals, currentUserId }: GoalListProps) {
             </Button>
           ))}
         </div>
-        <Button onClick={() => { setEditGoal(null); setFormOpen(true); }}>
+        <Button className="shrink-0" onClick={() => { setEditGoal(null); setFormOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Meta
         </Button>

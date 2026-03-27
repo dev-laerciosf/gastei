@@ -84,8 +84,8 @@ export function TransactionsList({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button onClick={handleNew}>
             <Plus className="mr-2 h-4 w-4" />
             Nova Transação
@@ -112,7 +112,7 @@ export function TransactionsList({
             </Select>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 self-end sm:self-auto">
           <Button
             variant={viewMode === "list" ? "secondary" : "ghost"}
             size="icon"
@@ -232,8 +232,8 @@ function TransactionRow({
             />
           )}
           <div>
-            <div className="flex items-center gap-2">
-              <p className="font-medium">{tx.description}</p>
+            <p className="font-medium leading-snug">{tx.description}</p>
+            <div className="flex flex-wrap gap-1 mt-0.5">
               {tx.isDebt && (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                   Empréstimo
@@ -267,23 +267,25 @@ function TransactionRow({
                 </Badge>
               ))}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {tx.category?.name ?? "Sem categoria"} · {format(toUTCDate(tx.date), "dd MMM yyyy", { locale: ptBR })}
               {tx.user.name && ` · ${tx.user.name}`}
               {tx.isDebt && tx.debtPersonName && ` · ${tx.debtPersonName}`}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`font-semibold font-mono tabular-nums ${tx.type === "INCOME" ? "text-emerald-600" : "text-rose-600"}`}>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span className={`font-semibold font-mono tabular-nums text-sm ${tx.type === "INCOME" ? "text-emerald-600" : "text-rose-600"}`}>
             {tx.type === "INCOME" ? "+" : "-"} {formatCurrency(tx.amount)}
           </span>
-          <Button variant="ghost" size="icon" onClick={() => onEdit(tx)}>
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(tx.id)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(tx)}>
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDelete(tx.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -152,22 +152,22 @@ export function RecurringList({ recurring, occurrences, categories }: RecurringL
                   </button>
                   <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.category.color }} />
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{item.description}</p>
-                      <Badge variant="secondary">
+                    <p className="font-medium leading-snug">{item.description}</p>
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                         {item.type === "INCOME" ? "Receita" : "Despesa"}
                       </Badge>
                       {item.installments ? (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                           {item.installments}x
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-xs text-emerald-600">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-emerald-600">
                           Renova automaticamente
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {item.category.name}{item.dayOfMonth ? ` · Dia ${item.dayOfMonth}` : ""}
                       {item.startMonth && ` · Início ${formatMonth(item.startMonth)}`}
                     </p>
@@ -184,10 +184,10 @@ export function RecurringList({ recurring, occurrences, categories }: RecurringL
                       </p>
                     )}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setDeleteId(item.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(item.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
