@@ -1,9 +1,10 @@
 import { Flag } from "lucide-react";
 import { getGoalsWithEntries } from "@/lib/actions/goals";
-import { requireAuth } from "@/lib/auth-guard";
+import { requireAuth, requireFeature } from "@/lib/auth-guard";
 import { GoalList } from "@/components/goal-list";
 
 export default async function GoalsPage() {
+  await requireFeature("goals");
   const session = await requireAuth();
   const goals = await getGoalsWithEntries();
 

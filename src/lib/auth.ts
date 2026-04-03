@@ -53,20 +53,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user, trigger, session }) {
-      if (trigger === "update" && session?.householdId !== undefined) {
-        const dbUserUpdate = await prisma.user.findUnique({
-          where: { id: token.sub! },
-          select: { householdId: true },
-        });
-        if (dbUserUpdate && dbUserUpdate.householdId === session.householdId) {
-          token.householdId = session.householdId;
+      if (trigger === "update") {
+        if (session?.householdId !== undefined) {
+          const dbUserUpdate = await prisma.user.findUnique({
+            where: { id: token.sub! },
+            select: { householdId: true },
+          });
+          if (dbUserUpdate && dbUserUpdate.householdId === session.householdId) {
+            token.householdId = session.householdId;
+          }
+        }
+        if (session?.plan !== undefined) {
+          token.plan = session.plan;
         }
         return token;
       }
       if (user) {
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id! },
-          select: { householdId: true, name: true },
+          select: { householdId: true, name: true, subscription: { select: { plan: true, status: true } } },
         });
 
         if (!dbUser?.householdId) {
@@ -77,12 +82,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } else {
           token.householdId = dbUser.householdId;
         }
+
+        token.plan = dbUser?.subscription?.status === "ACTIVE" ? dbUser.subscription.plan : "FREE";
       } else if (token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { householdId: true },
+          select: { householdId: true, subscription: { select: { plan: true, status: true } } },
         });
         token.householdId = dbUser?.householdId ?? null;
+        token.plan = dbUser?.subscription?.status === "ACTIVE" ? dbUser.subscription.plan : "FREE";
       }
       return token;
     },
@@ -90,6 +98,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.sub) {
         session.user.id = token.sub;
         session.user.householdId = token.householdId as string | null;
+        session.user.plan = (token.plan as "FREE" | "PRO" | "PREMIUM") ?? "FREE";
       }
       return session;
     },

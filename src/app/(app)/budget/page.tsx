@@ -3,12 +3,14 @@ import { getBudgets } from "@/lib/actions/budget";
 import { getCategories } from "@/lib/actions/categories";
 import { BudgetList } from "@/components/budget-list";
 import { MonthPicker } from "@/components/month-picker";
+import { requireFeature } from "@/lib/auth-guard";
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
 }
 
 export default async function BudgetPage({ searchParams }: Props) {
+  await requireFeature("budgets");
   const params = await searchParams;
   const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
   const currentMonth = params.month && monthRegex.test(params.month) ? params.month : new Date().toISOString().slice(0, 7);

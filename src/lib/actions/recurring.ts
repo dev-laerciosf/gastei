@@ -33,6 +33,7 @@ export async function getRecurringOccurrences() {
       id: true,
       month: true,
       paid: true,
+      paidAt: true,
       transaction: {
         select: {
           id: true,
@@ -66,21 +67,6 @@ export async function toggleOccurrencePaid(occurrenceId: string) {
       id: occurrenceId,
       recurringTransaction: { householdId },
     },
-    include: {
-      recurringTransaction: {
-        select: {
-          description: true,
-          amount: true,
-          type: true,
-          dayOfMonth: true,
-          startMonth: true,
-          endMonth: true,
-          installments: true,
-          categoryId: true,
-          userId: true,
-        },
-      },
-    },
   });
 
   if (!occurrence) {
@@ -90,57 +76,12 @@ export async function toggleOccurrencePaid(occurrenceId: string) {
   const markingAsPaid = !occurrence.paid;
 
   try {
-    await prisma.$transaction(async (tx) => {
-      if (markingAsPaid) {
-        const template = occurrence.recurringTransaction;
-        const now = new Date();
-        const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-
-        let description = template.description;
-        if (template.installments) {
-          const allMonths = monthRange(template.startMonth, template.endMonth ?? occurrence.month);
-          const installmentIndex = allMonths.indexOf(occurrence.month) + 1;
-          description = `${template.description} - Parcela ${installmentIndex}/${template.installments}`;
-        }
-
-        let amount = template.amount;
-        if (template.installments) {
-          const allMonths = monthRange(template.startMonth, template.endMonth ?? occurrence.month);
-          const installmentIndex = allMonths.indexOf(occurrence.month) + 1;
-          const base = Math.floor(template.amount / template.installments);
-          const remainder = template.amount - base * template.installments;
-          amount = installmentIndex <= remainder ? base + 1 : base;
-        }
-
-        if (occurrence.transactionId) {
-          await tx.transaction.delete({ where: { id: occurrence.transactionId } }).catch(() => {});
-        }
-
-        const transaction = await tx.transaction.create({
-          data: {
-            description,
-            amount,
-            type: template.type,
-            date,
-            categoryId: template.categoryId,
-            userId: template.userId,
-            householdId,
-          },
-        });
-
-        await tx.recurringOccurrence.update({
-          where: { id: occurrenceId },
-          data: { paid: true, transactionId: transaction.id },
-        });
-      } else {
-        if (occurrence.transactionId) {
-          await tx.transaction.delete({ where: { id: occurrence.transactionId } }).catch(() => {});
-        }
-        await tx.recurringOccurrence.update({
-          where: { id: occurrenceId },
-          data: { paid: false, transactionId: null },
-        });
-      }
+    await prisma.recurringOccurrence.update({
+      where: { id: occurrenceId },
+      data: {
+        paid: markingAsPaid,
+        paidAt: markingAsPaid ? new Date() : null,
+      },
     });
   } catch (error) {
     console.error("Failed to toggle occurrence:", error);
@@ -333,7 +274,7 @@ export async function materializeRecurring() {
     where: {
       recurringTransactionId: { in: templates.map((t) => t.id) },
     },
-    select: { recurringTransactionId: true, month: true },
+    select: { id: true, recurringTransactionId: true, month: true, transactionId: true },
   });
 
   const existingSet = new Set(
@@ -355,14 +296,70 @@ export async function materializeRecurring() {
     }
   }
 
-  if (toCreate.length === 0) return;
+  if (toCreate.length > 0) {
+    await prisma.recurringOccurrence.createMany({
+      data: toCreate.map(({ templateId, month }) => ({
+        month,
+        recurringTransactionId: templateId,
+      })),
+    });
+  }
 
-  await prisma.recurringOccurrence.createMany({
-    data: toCreate.map(({ templateId, month }) => ({
-      month,
-      recurringTransactionId: templateId,
-    })),
-  });
+  const templateMap = new Map(templates.map((t) => [t.id, t]));
+
+  const allOccurrences = toCreate.length > 0
+    ? await prisma.recurringOccurrence.findMany({
+        where: { recurringTransactionId: { in: templates.map((t) => t.id) } },
+        select: { id: true, recurringTransactionId: true, month: true, transactionId: true },
+      })
+    : existingOccurrences;
+
+  const needsTransaction = allOccurrences.filter(
+    (o) => o.month <= currentMonth && !o.transactionId
+  );
+
+  for (const occ of needsTransaction) {
+    const template = templateMap.get(occ.recurringTransactionId);
+    if (!template) continue;
+
+    let description = template.description;
+    let amount = template.amount;
+
+    if (template.installments) {
+      const allMonths = monthRange(template.startMonth, template.endMonth ?? occ.month);
+      const installmentIndex = allMonths.indexOf(occ.month) + 1;
+      description = `${template.description} - Parcela ${installmentIndex}/${template.installments}`;
+      const base = Math.floor(template.amount / template.installments);
+      const remainder = template.amount - base * template.installments;
+      amount = installmentIndex <= remainder ? base + 1 : base;
+    }
+
+    const [year, month] = occ.month.split("-").map(Number);
+    const day = Math.min(template.dayOfMonth ?? 1, new Date(year, month, 0).getDate());
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        const transaction = await tx.transaction.create({
+          data: {
+            description,
+            amount,
+            type: template.type,
+            date,
+            categoryId: template.categoryId,
+            userId: template.userId,
+            householdId,
+          },
+        });
+        await tx.recurringOccurrence.update({
+          where: { id: occ.id },
+          data: { transactionId: transaction.id },
+        });
+      });
+    } catch {
+      // occurrence may already have a transaction from a race condition
+    }
+  }
 }
 
 function addMonths(month: string, n: number): string {

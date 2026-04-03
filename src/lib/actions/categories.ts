@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
 import { categorySchema } from "@/lib/validations/category";
+import { getCategoryLimit } from "@/lib/plans";
 
 export async function getCategories() {
   const session = await requireAuth();
@@ -19,6 +20,17 @@ export async function createCategory(formData: FormData) {
   const session = await requireAuth();
   if (!session.user.householdId) {
     return { error: "Grupo não encontrado" };
+  }
+
+  const plan = session.user.plan ?? "FREE";
+  const limit = getCategoryLimit(plan);
+  if (limit !== Infinity) {
+    const count = await prisma.category.count({
+      where: { householdId: session.user.householdId },
+    });
+    if (count >= limit) {
+      return { error: `Limite de ${limit} categorias atingido. Faça upgrade do seu plano.` };
+    }
   }
 
   const parsed = categorySchema.safeParse({

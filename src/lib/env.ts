@@ -16,3 +16,19 @@ export function getGoogleCredentials(): { clientId: string; clientSecret: string
     clientSecret: requireEnv("GOOGLE_CLIENT_SECRET"),
   };
 }
+
+export function getStripeSecretKey(): string {
+  return requireEnv("STRIPE_SECRET_KEY");
+}
+
+export function getStripeWebhookSecret(): string {
+  return requireEnv("STRIPE_WEBHOOK_SECRET");
+}
+
+export function getStripePublishableKey(): string {
+  return requireEnv("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY");
+}
+
+export function getAppUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:5000";
+}

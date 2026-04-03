@@ -3,12 +3,14 @@ import { BillsList } from "@/components/bills-list";
 import { MonthPicker } from "@/components/month-picker";
 import { safeMonth } from "@/lib/utils/date";
 import { Receipt } from "lucide-react";
+import { requireFeature } from "@/lib/auth-guard";
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
 }
 
 export default async function BillsPage({ searchParams }: Props) {
+  await requireFeature("bills");
   const params = await searchParams;
   const currentMonth = safeMonth(params.month);
 

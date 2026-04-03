@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             userEmail={session.user.email}
             balance={balance}
           />
-          <Header userName={session.user.name} balance={balance} />
+          <Header userName={session.user.name} balance={balance} plan={session.user.plan} />
           <main className="flex-1 overflow-y-auto px-4 py-6 pb-24 lg:px-8 lg:py-8 lg:pb-8">
             <div className="mx-auto max-w-5xl">{children}</div>
           </main>

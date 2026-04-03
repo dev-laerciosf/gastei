@@ -12,6 +12,11 @@ export const authConfig = {
       const isAuthPage =
         nextUrl.pathname.startsWith("/login") ||
         nextUrl.pathname.startsWith("/register");
+      const isPublicPage =
+        nextUrl.pathname.startsWith("/pricing") ||
+        nextUrl.pathname.startsWith("/api/stripe/webhook");
+
+      if (isPublicPage) return true;
 
       if (isAuthPage) {
         return isLoggedIn ? Response.redirect(new URL("/dashboard", nextUrl)) : true;

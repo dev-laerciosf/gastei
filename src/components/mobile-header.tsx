@@ -4,13 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BalanceCard } from "@/components/balance-card";
+import { PlanBadge } from "@/components/plan-badge";
 import { navItems } from "@/components/sidebar";
+import type { Plan } from "@prisma/client";
 
 interface MobileHeaderProps {
   userName?: string | null;
@@ -20,6 +22,8 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ userName, userEmail, balance }: MobileHeaderProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const plan: Plan = session?.user?.plan ?? "FREE";
   const [open, setOpen] = useState(false);
 
   return (
@@ -74,6 +78,9 @@ export function MobileHeader({ userName, userEmail, balance }: MobileHeaderProps
       <BalanceCard balance={balance} />
 
       <div className="flex items-center gap-2">
+        <Link href="/settings/billing">
+          <PlanBadge plan={plan} />
+        </Link>
         <ThemeToggle />
       </div>
     </header>

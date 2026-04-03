@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
 import { transactionSchema, installmentTransactionSchema } from "@/lib/validations/transaction";
 import { parseCurrency } from "@/lib/utils/money";
+import { getTransactionLimit } from "@/lib/plans";
 import type { Transaction, Category, Prisma } from "@prisma/client";
 
 interface GetTransactionsParams {
@@ -109,6 +110,20 @@ export async function createTransaction(formData: FormData) {
   const householdId = session.user.householdId;
   if (!householdId) {
     return { error: "Grupo não encontrado" };
+  }
+
+  const plan = session.user.plan ?? "FREE";
+  const limit = getTransactionLimit(plan);
+  if (limit !== Infinity) {
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+    const monthEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
+    const count = await prisma.transaction.count({
+      where: { householdId, date: { gte: monthStart, lt: monthEnd } },
+    });
+    if (count >= limit) {
+      return { error: `Limite de ${limit} transações/mês atingido. Faça upgrade do seu plano.` };
+    }
   }
 
   let tagIds: string[] = [];

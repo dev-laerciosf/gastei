@@ -16,6 +16,8 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  stripeCustomerId String? @unique
+
   householdId String?
   household   Household? @relation(fields: [householdId], references: [id])
 
@@ -24,6 +26,7 @@ model User {
   sessions              Session[]
   recurringTransactions RecurringTransaction[]
   savingsGoals          SavingsGoal[]
+  subscription          Subscription?
 
   @@index([householdId])
   @@map("users")
@@ -89,6 +92,19 @@ model Household {
 enum TransactionType {
   INCOME
   EXPENSE
+}
+
+enum Plan {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  INCOMPLETE
 }
 
 enum GoalType {
@@ -188,9 +204,10 @@ model RecurringTransaction {
 }
 
 model RecurringOccurrence {
-  id    String  @id @default(cuid())
-  month String
-  paid  Boolean @default(false)
+  id     String    @id @default(cuid())
+  month  String
+  paid   Boolean   @default(false)
+  paidAt DateTime?
 
   transactionId String?     @unique
   transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
@@ -293,4 +310,22 @@ model TransactionTag {
 
   @@id([transactionId, tagId])
   @@map("transaction_tags")
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  plan                 Plan               @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }

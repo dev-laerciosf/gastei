@@ -29,6 +29,7 @@ interface Occurrence {
   id: string;
   month: string;
   paid: boolean;
+  paidAt: string | Date | null;
   transaction: {
     id: string;
     description: string;
@@ -216,6 +217,11 @@ export function RecurringList({ recurring, occurrences, categories }: RecurringL
                           <Badge variant="secondary" className={`text-xs ${config.className}`}>
                             {config.label}
                           </Badge>
+                          {occ.paidAt && (
+                            <span className="text-[11px] text-muted-foreground">
+                              {new Date(occ.paidAt).toLocaleDateString("pt-BR")}
+                            </span>
+                          )}
                         </div>
                         <span className={`text-sm font-mono tabular-nums ${item.type === "INCOME" ? "text-emerald-600" : "text-rose-600"}`}>
                           {formatCurrency(
