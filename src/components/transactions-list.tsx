@@ -12,8 +12,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TransactionForm } from "@/components/transaction-form";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TransactionPagination } from "@/components/transaction-pagination";
-import { deleteTransaction } from "@/lib/actions/transactions";
+import { deleteTransaction, deleteInstallmentTransaction } from "@/lib/actions/transactions";
+import { toast } from "sonner";
 import { useDeleteAction } from "@/hooks/use-delete-action";
 import { formatCurrency } from "@/lib/utils/money";
 import type { TransactionType, Tag } from "@/types";
@@ -28,7 +39,7 @@ interface Transaction {
   date: Date;
   category: { id: string; name: string; color: string; type: TransactionType } | null;
   user: { name: string | null };
-  recurringOccurrence?: { id: string } | null;
+  recurringOccurrence?: { id: string; recurringTransactionId: string; recurringTransaction: { installments: number | null } } | null;
   tags: { tag: { id: string; name: string; color: string } }[];
   splitEntries?: { id: string; paid: boolean }[];
 }
@@ -56,8 +67,26 @@ export function TransactionsList({
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
   const { deleteId, setDeleteId, deleting, handleDelete } = useDeleteAction(deleteTransaction);
+  const [deleteInstallmentId, setDeleteInstallmentId] = useState<string | null>(null);
+  const [deletingInstallment, setDeletingInstallment] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const deletingTransaction = deleteId ? transactions.find((tx) => tx.id === deleteId) : null;
+  const isInstallmentDelete = !!deletingTransaction?.recurringOccurrence?.recurringTransaction?.installments;
+
+  async function handleDeleteFullInstallment() {
+    if (!deletingTransaction?.recurringOccurrence) return;
+    setDeletingInstallment(true);
+    const result = await deleteInstallmentTransaction(deletingTransaction.recurringOccurrence.recurringTransactionId);
+    setDeletingInstallment(false);
+    if (result.error) {
+      toast.error(result.error);
+    } else {
+      toast.success("Parcelamento excluído");
+      setDeleteId(null);
+    }
+  }
 
   function handleEdit(tx: Transaction) {
     setEditing(tx);
@@ -194,14 +223,43 @@ export function TransactionsList({
         }
       />
 
-      <ConfirmDialog
-        open={!!deleteId}
-        onOpenChange={(open) => !open && setDeleteId(null)}
-        title="Excluir transação"
-        description="Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita."
-        onConfirm={handleDelete}
-        loading={deleting}
-      />
+      {isInstallmentDelete ? (
+        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir transação parcelada</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta transação faz parte de um parcelamento. O que deseja excluir?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+              <AlertDialogCancel disabled={deleting || deletingInstallment}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={deleting || deletingInstallment}
+              >
+                {deleting ? "Excluindo..." : "Apenas esta parcela"}
+              </AlertDialogAction>
+              <AlertDialogAction
+                onClick={handleDeleteFullInstallment}
+                disabled={deleting || deletingInstallment}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deletingInstallment ? "Excluindo..." : "Todo o parcelamento"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : (
+        <ConfirmDialog
+          open={!!deleteId}
+          onOpenChange={(open) => !open && setDeleteId(null)}
+          title="Excluir transação"
+          description="Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita."
+          onConfirm={handleDelete}
+          loading={deleting}
+        />
+      )}
 
       {viewMode === "list" && totalPages > 1 && (
         <TransactionPagination page={page} totalPages={totalPages} />

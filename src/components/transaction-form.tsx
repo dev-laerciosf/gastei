@@ -42,6 +42,7 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
   const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? "");
   const [tagIds, setTagIds] = useState<string[]>(transaction?.tagIds ?? []);
   const [isInstallment, setIsInstallment] = useState(false);
+  const [installmentAmountMode, setInstallmentAmountMode] = useState<"total" | "per_installment">("total");
   const [isDebt, setIsDebt] = useState(transaction?.isDebt ?? false);
   const isEditing = !!transaction;
 
@@ -51,6 +52,7 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
       setCategoryId(transaction?.categoryId ?? "");
       setTagIds(transaction?.tagIds ?? []);
       setIsInstallment(false);
+      setInstallmentAmountMode("total");
       setIsDebt(transaction?.isDebt ?? false);
     }
   }, [open, transaction?.type, transaction?.categoryId, transaction?.tagIds, transaction?.isDebt]);
@@ -75,6 +77,9 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
     formData.set("type", type);
     formData.set("tagIds", JSON.stringify(tagIds));
     formData.set("isDebt", isDebt ? "true" : "false");
+    if (isInstallment) {
+      formData.set("installmentAmountMode", installmentAmountMode);
+    }
 
     const validationError = validateTransactionFormData(formData);
     if (validationError) {
@@ -159,7 +164,11 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
             <Input id="description" name="description" defaultValue={transaction?.description} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="amount">{isInstallment ? "Valor total" : "Valor"}</Label>
+            <Label htmlFor="amount">
+              {isInstallment
+                ? installmentAmountMode === "total" ? "Valor total" : "Valor da parcela"
+                : "Valor"}
+            </Label>
             <CurrencyInput
               id="amount"
               name="amount"
@@ -177,20 +186,44 @@ export function TransactionForm({ open, onOpenChange, categories, tags, transact
             </div>
           )}
           {isInstallment && !isEditing && (
-            <div className="space-y-2">
-              <Label htmlFor="installments">Número de parcelas</Label>
-              <Input
-                id="installments"
-                name="installments"
-                type="number"
-                min={2}
-                max={48}
-                placeholder="Ex: 12"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                O valor será dividido igualmente entre as parcelas
-              </p>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={installmentAmountMode === "total" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setInstallmentAmountMode("total")}
+                >
+                  Valor total
+                </Button>
+                <Button
+                  type="button"
+                  variant={installmentAmountMode === "per_installment" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setInstallmentAmountMode("per_installment")}
+                >
+                  Valor da parcela
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="installments">Número de parcelas</Label>
+                <Input
+                  id="installments"
+                  name="installments"
+                  type="number"
+                  min={2}
+                  max={48}
+                  placeholder="Ex: 12"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  {installmentAmountMode === "total"
+                    ? "O valor será dividido igualmente entre as parcelas"
+                    : "Cada parcela terá o valor informado acima"}
+                </p>
+              </div>
             </div>
           )}
           <div className="space-y-2">

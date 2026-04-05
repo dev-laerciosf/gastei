@@ -21,7 +21,7 @@ interface GetTransactionsParams {
 type TransactionWithRelations = Transaction & {
   category: Category | null;
   user: { name: string | null };
-  recurringOccurrence: { id: string } | null;
+  recurringOccurrence: { id: string; recurringTransactionId: string; recurringTransaction: { installments: number | null } } | null;
   tags: { tag: { id: string; name: string; color: string } }[];
   splitEntries: { id: string; paid: boolean }[];
 };
@@ -78,7 +78,7 @@ export async function getTransactions(params: GetTransactionsParams = {}): Promi
       include: {
         category: true,
         user: { select: { name: true } },
-        recurringOccurrence: { select: { id: true } },
+        recurringOccurrence: { select: { id: true, recurringTransactionId: true, recurringTransaction: { select: { installments: true } } } },
         tags: { include: { tag: { select: { id: true, name: true, color: true } } } },
         splitEntries: { select: { id: true, paid: true } },
       },
@@ -333,6 +333,45 @@ export async function deleteTransaction(id: string) {
   return { success: true };
 }
 
+export async function deleteInstallmentTransaction(recurringTransactionId: string) {
+  const session = await requireAuth();
+  if (!session.user.householdId) {
+    return { error: "Grupo não encontrado" };
+  }
+
+  const recurring = await prisma.recurringTransaction.findFirst({
+    where: { id: recurringTransactionId, householdId: session.user.householdId },
+    include: {
+      occurrences: { select: { id: true, transactionId: true } },
+    },
+  });
+
+  if (!recurring) {
+    return { error: "Parcelamento não encontrado" };
+  }
+
+  const transactionIds = recurring.occurrences
+    .map((o) => o.transactionId)
+    .filter((id): id is string => id !== null);
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.transactionTag.deleteMany({ where: { transactionId: { in: transactionIds } } });
+      await tx.recurringOccurrence.deleteMany({ where: { recurringTransactionId } });
+      await tx.transaction.deleteMany({ where: { id: { in: transactionIds } } });
+      await tx.recurringTransaction.delete({ where: { id: recurringTransactionId } });
+    });
+  } catch (error) {
+    console.error("Failed to delete installment transaction:", error);
+    return { error: "Erro ao excluir parcelamento. Tente novamente." };
+  }
+
+  revalidatePath("/transactions");
+  revalidatePath("/dashboard");
+  revalidatePath("/recurring");
+  return { success: true };
+}
+
 export async function createInstallmentTransaction(formData: FormData) {
   const session = await requireAuth();
   const householdId = session.user.householdId;
@@ -376,9 +415,12 @@ export async function createInstallmentTransaction(formData: FormData) {
     }
   }
 
-  const totalAmount = parseCurrency(parsed.data.amount);
-  const base = Math.floor(totalAmount / parsed.data.installments);
-  const remainder = totalAmount - base * parsed.data.installments;
+  const amountMode = formData.get("installmentAmountMode") as string | null;
+  const inputAmount = parseCurrency(parsed.data.amount);
+  const isPerInstallment = amountMode === "per_installment";
+  const totalAmount = isPerInstallment ? inputAmount * parsed.data.installments : inputAmount;
+  const base = isPerInstallment ? inputAmount : Math.floor(totalAmount / parsed.data.installments);
+  const remainder = isPerInstallment ? 0 : totalAmount - base * parsed.data.installments;
   const firstInstallmentAmount = remainder >= 1 ? base + 1 : base;
   const dateStr = parsed.data.date;
   const startMonth = dateStr.slice(0, 7);
